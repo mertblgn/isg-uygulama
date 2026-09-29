@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İSG Şantiye Yönetim ve Gözlem Sistemi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-slate-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-amber-500 p-2.5 rounded-lg text-slate-900 font-bold text-xl shadow">
+                    <i class="fa-solid fa-hard-hat"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide">İSG Şantiye Yönetim Portalı</h1>
+                    <p class="text-xs text-slate-400">TOKİ & İnşaat Projeleri İSG Takip Sistemi</p>
+                </div>
+            </div>
+            <nav class="flex space-x-2 bg-slate-800 p-1 rounded-lg border border-slate-700">
+                <button onclick="switchTab('personnel')" id="btn-personnel" class="px-4 py-2 rounded-md text-sm font-medium transition bg-amber-500 text-slate-900 shadow">
+                    <i class="fa-solid fa-users mr-2"></i>Personel & Eğitim
+                </button>
+                <button onclick="switchTab('audit')" id="btn-audit" class="px-4 py-2 rounded-md text-sm font-medium transition text-slate-300 hover:text-white">
+                    <i class="fa-solid fa-clipboard-check mr-2"></i>İSG Gözlem Formu
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
+
+        <!-- TAB 1: PERSONNEL & TRAINING -->
+        <section id="tab-personnel" class="space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">Şantiye Personel Listesi</h2>
+                    <p class="text-sm text-slate-500">Çalışanların İSG eğitim durumları ve sicil özetleri.</p>
+                </div>
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <div class="relative flex-grow md:w-64">
+                        <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400 text-sm"></i>
+                        <input type="text" id="searchPersonnel" oninput="filterPersonnel()" placeholder="Personel veya unvan ara..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    </div>
+                    <button onclick="openPersonnelModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold px-4 py-2 rounded-lg text-sm transition shadow-sm flex items-center gap-2 whitespace-nowrap">
+                        <i class="fa-solid fa-user-plus"></i>Personel Ekle
+                    </button>
+                </div>
+            </div>
+
+            <!-- Personnel Table -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 text-xs uppercase tracking-wider border-b border-slate-200">
+                                <th class="p-4 font-semibold">Ad Soyad</th>
+                                <th class="p-4 font-semibold">Unvan / Görev</th>
+                                <th class="p-4 font-semibold">TC Kimlik / Sicil</th>
+                                <th class="p-4 font-semibold">İSG Eğitimi Durumu</th>
+                                <th class="p-4 font-semibold text-center">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="personnelTableBody" class="divide-y divide-slate-200 text-sm">
+                            <!-- JS ile doldurulacak -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: AUDIT / GÖZLEM FORMU -->
+        <section id="tab-audit" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-6 border-b pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">İSG Saha Gözlem ve DÖF Formu</h2>
+                        <p class="text-sm text-slate-500">Saha denetimlerinde tespit edilen uygunsuzluklar ve önlemler.</p>
+                    </div>
+                    <button onclick="generatePDF()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-file-pdf text-amber-400"></i>Sicil Dosyası PDF İndir
+                    </button>
+                </div>
+
+                <form id="auditForm" onsubmit="saveAudit(event)" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Proje / Şantiye Adı</label>
+                        <input type="text" id="auditProject" value="TOKİ Konut İnşaatı Şantiyesi" required class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Denetim Tarihi</label>
+                        <input type="date" id="auditDate" required class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Uygunsuzluk Kategorisi</label>
+                        <select id="auditCategory" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500">
+                            <option value="Yüksekte Çalışma">Yüksekte Çalışma</option>
+                            <option value="Kişisel Koruyucu Donanım (KKD)">Kişisel Koruyucu Donanım (KKD)</option>
+                            <option value="Elektrik Güvenliği">Elektrik Güvenliği</option>
+                            <option value="İskele ve Yapı İskeleleri">İskele ve Yapı İskeleleri</option>
+                            <option value="İş Makineleri ve Trafik">İş Makineleri ve Trafik</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Risk Derecesi</label>
+                        <select id="auditRisk" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500">
+                            <option value="Düşük">Düşük Risk</option>
+                            <option value="Orta">Orta Risk</option>
+                            <option value="Yüksek">Yüksek Risk (Acil Durdurma)</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Uygunsuzluk Açıklaması ve Alınacak Önlem</label>
+                        <textarea id="auditDesc" rows="3" required placeholder="Tespit edilen güvensiz durumu ve giderilmesi için yapılması gerekenleri yazın..." class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500"></textarea>
+                    </div>
+                    <div class="md:col-span-2 flex justify-end">
+                        <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold px-6 py-2.5 rounded-lg text-sm transition shadow-sm">
+                            Gözlemi Kaydet
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Audit History Table -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h3 class="text-md font-bold text-slate-900 mb-4">Yapılan Saha Gözlemleri</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 text-xs uppercase tracking-wider border-b border-slate-200">
+                                <th class="p-3 font-semibold">Tarih</th>
+                                <th class="p-3 font-semibold">Kategori</th>
+                                <th class="p-3 font-semibold">Risk</th>
+                                <th class="p-3 font-semibold">Açıklama</th>
+                                <th class="p-3 font-semibold text-center">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody id="auditTableBody" class="divide-y divide-slate-200 text-sm">
+                            <!-- JS ile doldurulacak -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- HIDDEN PDF TEMPLATE -->
+    <div id="pdfTemplate" class="hidden p-8 bg-white text-slate-800" style="width: 800px;">
+        <div class="border-b-2 border-slate-900 pb-4 mb-6 flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold uppercase tracking-wider text-slate-900">İSG Sicil ve Saha Denetim Raporu</h1>
+                <p class="text-xs text-slate-500">İş Sağlığı ve Güvenliği Birimi Sicil Dosyası</p>
+            </div>
+            <div class="text-right text-xs text-slate-500">
+                <p>Rapor Tarihi: <span id="pdfDate"></span></p>
+                <p>Standart: OHSAS 18001 / ISO 45001</p>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <h2 class="text-sm font-bold bg-slate-100 p-2 border-l-4 border-amber-500 mb-3">1. Şantiye Personel Özeti</h2>
+            <table class="w-full text-left text-xs border border-slate-300">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-300">
+                        <th class="p-2 border-r border-slate-300">Ad Soyad</th>
+                        <th class="p-2 border-r border-slate-300">Unvan</th>
+                        <th class="p-2 border-r border-slate-300">Sicil No</th>
+                        <th class="p-2">Eğitim Durumu</th>
+                    </tr>
+                </thead>
+                <tbody id="pdfPersonnelBody"></tbody>
+            </table>
+        </div>
+
+        <div class="mb-6">
+            <h2 class="text-sm font-bold bg-slate-100 p-2 border-l-4 border-amber-500 mb-3">2. Saha Gözlem ve Uygunsuzluk Kayıtları</h2>
+            <table class="w-full text-left text-xs border border-slate-300">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-300">
+                        <th class="p-2 border-r border-slate-300">Tarih</th>
+                        <th class="p-2 border-r border-slate-300">Kategori</th>
+                        <th class="p-2 border-r border-slate-300">Risk</th>
+                        <th class="p-2">Açıklama</th>
+                    </tr>
+                </thead>
+                <tbody id="pdfAuditBody"></tbody>
+            </table>
+        </div>
+
+        <div class="mt-12 pt-6 border-t border-slate-300 flex justify-between text-xs">
+            <div>
+                <p class="font-bold">İSG Uzmanı / Teknisyeni</p>
+                <p class="text-slate-500 mt-8">İmza:</p>
+            </div>
+            <div>
+                <p class="font-bold">Şantiye Şefi / Proje Müdürü</p>
+                <p class="text-slate-500 mt-8">İmza:</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- PERSONNEL MODAL -->
+    <div id="personnelModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
+            <h3 class="text-lg font-bold text-slate-900 mb-4">Yeni Personel Ekle</h3>
+            <form id="personnelForm" onsubmit="savePersonnel(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Ad Soyad</label>
+                    <input type="text" id="pName" required class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Unvan / Görev</label>
+                    <input type="text" id="pRole" required placeholder="Örn: Kalıp Ustası, Operatör" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">TC Kimlik / Sicil No</label>
+                    <input type="text" id="pId" required class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">İSG Eğitimi Durumu</label>
+                    <select id="pTraining" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                        <option value="Tamamlandı">Tamamlandı (Geçerli)</option>
+                        <option value="Eksik / Yenilenecek">Eksik / Yenilenecek</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-3 pt-4 border-t">
+                    <button type="button" onclick="closePersonnelModal()" class="px-4 py-2 border rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
+                    <button type="submit" class="px-4 py-2 bg-amber-500 text-slate-900 font-semibold rounded-lg text-sm hover:bg-amber-600">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        let personnelList = JSON.parse(localStorage.getItem('isg_personnel')) || [
+            { name: 'Ahmet Yılmaz', role: 'Demirci Ustası', id: '12345678901', training: 'Tamamlandı' },
+            { name: 'Mehmet Demir', role: 'Kule Vinç Operatörü', id: '98765432109', training: 'Tamamlandı' },
+            { name: 'Ali Kaya', role: 'Düz İşçi', id: '45678912301', training: 'Eksik / Yenilenecek' }
+        ];
+
+        let auditList = JSON.parse(localStorage.getItem('isg_audits')) || [
+            { date: '2026-09-25', category: 'Yüksekte Çalışma', risk: 'Yüksek', desc: 'B Blok 3. kat balkon kenarlarında korkuluk eksikliği tespit edildi, çalışmalar durduruldu.' }
+        ];
+
+        document.getElementById('auditDate').valueAsDate = new Date();
+
+        function switchTab(tab) {
+            if(tab === 'personnel') {
+                document.getElementById('tab-personnel').classList.remove('hidden');
+                document.getElementById('tab-audit').classList.add('hidden');
+                document.getElementById('btn-personnel').className = "px-4 py-2 rounded-md text-sm font-medium transition bg-amber-500 text-slate-900 shadow";
+                document.getElementById('btn-audit').className = "px-4 py-2 rounded-md text-sm font-medium transition text-slate-300 hover:text-white";
+            } else {
+                document.getElementById('tab-audit').classList.remove('hidden');
+                document.getElementById('tab-personnel').classList.add('hidden');
+                document.getElementById('btn-audit').className = "px-4 py-2 rounded-md text-sm font-medium transition bg-amber-500 text-slate-900 shadow";
+                document.getElementById('btn-personnel').className = "px-4 py-2 rounded-md text-sm font-medium transition text-slate-300 hover:text-white";
+            }
+        }
+
+        function renderPersonnel() {
+            const tbody = document.getElementById('personnelTableBody');
+            tbody.innerHTML = '';
+            personnelList.forEach((p, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-4 font-medium text-slate-900">${p.name}</td>
+                    <td class="p-4 text-slate-600">${p.role}</td>
+                    <td class="p-4 text-slate-500">${p.id}</td>
+                    <td class="p-4">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${p.training === 'Tamamlandı' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">
+                            ${p.training}
+                        </span>
+                    </td>
+                    <td class="p-4 text-center">
+                        <button onclick="deletePersonnel(${index})" class="text-slate-400 hover:text-red-600 transition"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            localStorage.setItem('isg_personnel', JSON.stringify(personnelList));
+        }
+
+        function filterPersonnel() {
+            const query = document.getElementById('searchPersonnel').value.toLowerCase();
+            const tbody = document.getElementById('personnelTableBody');
+            tbody.innerHTML = '';
+            personnelList.filter(p => p.name.toLowerCase().includes(query) || p.role.toLowerCase().includes(query)).forEach((p, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-4 font-medium text-slate-900">${p.name}</td>
+                    <td class="p-4 text-slate-600">${p.role}</td>
+                    <td class="p-4 text-slate-500">${p.id}</td>
+                    <td class="p-4">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${p.training === 'Tamamlandı' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">
+                            ${p.training}
+                        </span>
+                    </td>
+                    <td class="p-4 text-center">
+                        <button onclick="deletePersonnel(${index})" class="text-slate-400 hover:text-red-600 transition"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openPersonnelModal() { document.getElementById('personnelModal').classList.remove('hidden'); document.getElementById('personnelModal').classList.add('flex'); }
+        function closePersonnelModal() { document.getElementById('personnelModal').classList.add('hidden'); document.getElementById('personnelModal').classList.remove('flex'); }
+
+        function savePersonnel(e) {
+            e.preventDefault();
+            const newP = {
+                name: document.getElementById('pName').value,
+                role: document.getElementById('pRole').value,
+                id: document.getElementById('pId').value,
+                training: document.getElementById('pTraining').value
+            };
+            personnelList.push(newP);
+            renderPersonnel();
+            closePersonnelModal();
+            document.getElementById('personnelForm').reset();
+        }
+
+        function deletePersonnel(index) {
+            personnelList.splice(index, 1);
+            renderPersonnel();
+        }
+
+        function renderAudits() {
+            const tbody = document.getElementById('auditTableBody');
+            tbody.innerHTML = '';
+            auditList.forEach((a, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-3 text-slate-600">${a.date}</td>
+                    <td class="p-3 font-medium text-slate-900">${a.category}</td>
+                    <td class="p-3">
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold ${a.risk === 'Yüksek' ? 'bg-red-100 text-red-800' : a.risk === 'Orta' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}">
+                            ${a.risk}
+                        </span>
+                    </td>
+                    <td class="p-3 text-slate-600">${a.desc}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="deleteAudit(${index})" class="text-slate-400 hover:text-red-600 transition"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            localStorage.setItem('isg_audits', JSON.stringify(auditList));
+        }
+
+        function saveAudit(e) {
+            e.preventDefault();
+            const newA = {
+                date: document.getElementById('auditDate').value,
+                category: document.getElementById('auditCategory').value,
+                risk: document.getElementById('auditRisk').value,
+                desc: document.getElementById('auditDesc').value
+            };
+            auditList.unshift(newA);
+            renderAudits();
+            document.getElementById('auditDesc').value = '';
+            alert('Gözlem başarıyla kaydedildi.');
+        }
+
+        function deleteAudit(index) {
+            auditList.splice(index, 1);
+            renderAudits();
+        }
+
+        function generatePDF() {
+            document.getElementById('pdfDate').innerText = new Date().toLocaleDateString('tr-TR');
+            
+            const pBody = document.getElementById('pdfPersonnelBody');
+            pBody.innerHTML = '';
+            personnelList.forEach(p => {
+                pBody.innerHTML += `<tr class="border-b border-slate-200"><td class="p-2 border-r border-slate-200">${p.name}</td><td class="p-2 border-r border-slate-200">${p.role}</td><td class="p-2 border-r border-slate-200">${p.id}</td><td class="p-2">${p.training}</td></tr>`;
+            });
+
+            const aBody = document.getElementById('pdfAuditBody');
+            aBody.innerHTML = '';
+            auditList.forEach(a => {
+                aBody.innerHTML += `<tr class="border-b border-slate-200"><td class="p-2 border-r border-slate-200">${a.date}</td><td class="p-2 border-r border-slate-200">${a.category}</td><td class="p-2 border-r border-slate-200">${a.risk}</td><td class="p-2">${a.desc}</td></tr>`;
+            });
+
+            const element = document.getElementById('pdfTemplate');
+            element.classList.remove('hidden');
+
+            const opt = {
+                margin:       10,
+                filename:     'ISG_Sicil_ve_Saha_Raporu.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().from(element).set(opt).save().then(() => {
+                element.classList.add('hidden');
+            });
+        }
+
+        renderPersonnel();
+        renderAudits();
+    </script>
+</body>
+</html>
