@@ -34,6 +34,7 @@ th{background:#f1f5f9;color:var(--p)}
 .cc h3{color:var(--p)}.cc p{font-size:.8rem;color:#64748b;margin:4px 0 8px}
 .bg{display:inline-block;padding:3px 8px;border-radius:4px;font-size:.75rem;font-weight:700}
 .gr{background:#d1fae5;color:#065f46}.r{background:#fee2e2;color:#991b1b}.y{background:#fef3c7;color:#92400e}
+.un{border:2px solid var(--d)}
 .th{width:80px;height:60px;object-fit:cover;border-radius:4px;border:1px solid var(--bd);cursor:pointer;background:#e2e8f0}
 .gi{border:1px solid var(--bd);border-radius:8px;padding:5px;position:relative;font-size:.75rem;color:#64748b}
 .gi input{position:absolute;top:10px;left:10px;width:18px;height:18px}
@@ -50,6 +51,8 @@ li{margin:4px 0 4px 18px}
 <div class="c" id="app"></div>
 <div id="pm" class="md"><div class="mc"><h2 id="pmt">📄 Sicil dosyası önizleme</h2><div id="pv" style="max-height:60vh;overflow:auto;border:1px solid var(--bd);margin-bottom:12px"></div><button class="b g" onclick="pdfDl()">PDF indir</button><button class="b" onclick="$('pm').style.display='none'">Kapat</button></div></div>
 <div id="mp" class="md" style="padding:0" onclick="if(event.target==this)closePanel()"><div class="mc" style="margin:0;max-width:340px;min-height:100%;border-radius:0 12px 12px 0;background:#f8fafc;padding:15px"><div style="display:flex;justify-content:space-between;align-items:center"><h2 style="border:0;margin:0">⚙️ Yönetim paneli</h2><button class="b sm" onclick="closePanel()" aria-label="Kapat">✕</button></div><div id="mpc" style="margin-top:12px"></div></div></div>
+<div id="al" style="display:none;position:fixed;top:56px;left:10px;right:10px;z-index:10;background:#fef3c7;border:2px solid #f59e0b;border-radius:10px;padding:12px;box-shadow:0 4px 12px #0004"><div id="alt"></div><button class="b sm" style="margin-top:8px" onclick="$('al').style.display='none';$('alt').innerHTML=''">Tamam</button></div>
+<div id="ltm" class="md"><div class="mc"><h2 id="ltt"></h2><div id="ltb" style="max-height:65vh;overflow:auto;white-space:pre-wrap;font-size:.85rem;color:#334155;padding:10px;background:#f8fafc;border-radius:8px;margin-bottom:12px"></div><button class="b" onclick="$('ltm').style.display='none'">Kapat</button></div></div>
 <div id="lb" class="md" onclick="this.style.display='none'"><img id="lbi" alt=""></div>
 <script>
 const $=i=>document.getElementById(i),
@@ -70,7 +73,7 @@ tx=(s,m,f)=>idb.then(d=>new Promise((res,rej)=>{const t=d.transaction(s,m),q=f(t
 get=(s,k)=>tx(s,'readonly',o=>o.get(k)),put=(s,k,v)=>tx(s,'readwrite',o=>o.put(v,k)),rm=(s,k)=>tx(s,'readwrite',o=>o.delete(k)),
 save=()=>put('kv','db',db).catch(e=>alert('Kayıt hatası: '+(e&&e.message||e)+'\nLütfen hemen yedek alın.')),
 imgSrc=async k=>{if(!cache.has(k))cache.set(k,await get('img',k));return cache.get(k)};
-function norm(){normProf();db.companies.forEach(c=>{c.id=sid(c.id)||uid();c.photos??=[];c.accidents??=[];c.personnel??=[];c.docs??=[];c.docs.forEach(a=>{a.id=sid(a.id)||uid();a.key=sid(a.key)});[...c.accidents,...c.photos].forEach(a=>{a.id=sid(a.id)||uid();if(a.img)a.img=sid(a.img)});c.personnel.forEach(p=>{p.id=sid(p.id)||uid();p.trainings??=[];p.health??=[];p.ppe??=[];p.perf??=[];p.perf.forEach(a=>{a.id=sid(a.id)||uid();if(a.img)a.img=sid(a.img)});p.health.forEach(r=>r.name??=r.type);p.ppe.forEach(r=>r.name??=r.item)})})}
+function norm(){normProf();db.companies.forEach(c=>{c.id=sid(c.id)||uid();c.photos??=[];c.accidents??=[];c.personnel??=[];c.docs??=[];c.docs.forEach(a=>{a.id=sid(a.id)||uid();a.key=sid(a.key)});[...c.accidents,...c.photos].forEach(a=>{a.id=sid(a.id)||uid();if(a.img)a.img=sid(a.img)});c.personnel.forEach(p=>{p.id=sid(p.id)||uid();if(p.img)p.img=sid(p.img);p.trainings??=[];p.health??=[];p.ppe??=[];p.perf??=[];p.perf.forEach(a=>{a.id=sid(a.id)||uid();if(a.img)a.img=sid(a.img)});p.health.forEach(r=>r.name??=r.type);p.ppe.forEach(r=>r.name??=r.item)})})}
 const C=()=>db.companies.find(c=>c.id==cid);
 const shrink=f=>new Promise((res,rej)=>{const u=URL.createObjectURL(f),i=new Image();i.onload=()=>{const k=Math.min(1,1280/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',.72))};i.onerror=()=>rej(new Error('Görsel okunamadı'));i.src=u}),
 storeImg=async f=>{const k=uid();await put('img',k,await shrink(f));return k};
@@ -78,14 +81,14 @@ function hydrate(){document.querySelectorAll('img[data-i]').forEach(async m=>{m.
 async function zoom(k){$('lbi').src=await imgSrc(k);$('lb').style.display='block'}
 
 /* Firmalar */
-function home(){cid=pid=null;closePanel();setBar(1);const lb=+localStorage.getItem('isg_bak')||0,age=(Date.now()-lb)/864e5;
+function home(){cid=pid=null;closePanel();setBar(1);chkAlarms();const lb=+localStorage.getItem('isg_bak')||0,age=(Date.now()-lb)/864e5;
 $('app').innerHTML=`<header><h1>🏢 Firmalarım</h1></header>
 <div class="card"><h2>Firma / şantiye ekle</h2><input id="cn" placeholder="Firma veya şantiye adı"><input id="cd" placeholder="Lokasyon / açıklama"><button class="b g" onclick="addC()">Oluştur</button></div>
 <div class="card"><h2>Kayıtlı firmalar</h2><div class="grid">${db.companies.map(c=>`<div class="cc" onclick="pick('${c.id}')"><h3>${esc(c.name)}</h3><p>${esc(c.desc)||'Açıklama yok'}</p><span class="bg gr">${c.personnel.length} personel</span> <span class="bg r">${c.accidents.length} kayıt</span></div>`).join('')||'<p class="mt" style="grid-column:1/-1">Henüz firma yok.</p>'}</div></div>`}
 function addC(){const n=$('cn').value.trim();if(!n)return alert('Firma adı girin');db.companies.push({id:uid(),name:n,desc:$('cd').value.trim(),personnel:[],accidents:[],photos:[],docs:[]});save();home()}
 function pick(id){cid=id;pid=null;tab='p';dash()}
 function editC(){const c=C(),n=prompt('Firma adı',c.name);if(n===null)return;const d=prompt('Açıklama',c.desc||'');if(d===null)return;c.name=n.trim()||c.name;c.desc=d.trim();save();dash()}
-function delC(){const c=C();if(!confirm('"'+c.name+'" ve tüm kayıtları kalıcı olarak silinsin mi?'))return;[...c.accidents,...c.photos,...c.personnel.flatMap(p=>p.perf||[]),...(c.docs||[]).map(d=>({img:d.key}))].forEach(x=>x.img&&rm('img',x.img));db.companies=db.companies.filter(x=>x!==c);save();home()}
+function delC(){const c=C();if(!confirm('"'+c.name+'" ve tüm kayıtları kalıcı olarak silinsin mi?'))return;[...c.accidents,...c.photos,...c.personnel,...c.personnel.flatMap(p=>p.perf||[]),...(c.docs||[]).map(d=>({img:d.key}))].forEach(x=>x.img&&rm('img',x.img));db.companies=db.companies.filter(x=>x!==c);save();home()}
 function dash(){const c=C();if(!c)return home();
 $('app').innerHTML=`<header><div><h1>🏢 ${esc(c.name)}</h1><small>${esc(c.desc)}</small></div><div><button class="b sm" onclick="editC()" title="Düzenle">✎</button> <button class="b sm dg" onclick="delC()" title="Sil">🗑</button> <button class="b sm" onclick="home()">Firmalar</button></div></header>
 <div class="tabs">${[['p','Personel'],['a','Denetim / olay'],['g','📷 Görseller'],['d','📁 Dökümanlar'],['s','Özet']].map(([k,n])=>`<button class="tb ${tab==k?'on':''}" onclick="tab='${k}';pid=null;dash()">${n}</button>`).join('')}</div><div id="tc"></div>`;rc()}
@@ -95,23 +98,27 @@ function rc(){const c=C();$('tc').innerHTML=tab=='p'?(pid?detail(c):plist(c)):ta
 const warns=p=>[...p.trainings,...p.health].filter(r=>soon(days(r.exp)));
 function tcOk(t){if(!/^[1-9]\d{10}$/.test(t))return false;const d=[...t].map(Number),a=(7*(d[0]+d[2]+d[4]+d[6]+d[8])-(d[1]+d[3]+d[5]+d[7]))%10;return (a+10)%10==d[9]&&d.slice(0,10).reduce((x,y)=>x+y)%10==d[10]}
 function plist(c){const L=[...c.personnel].sort(cmp[srt]);
-return `<div class="card"><h2>Yeni personel</h2><input id="pn" placeholder="Ad soyad"><input id="pt" placeholder="TC kimlik no" inputmode="numeric" maxlength="11"><input id="pj" placeholder="Görevi / mesleği"><label>İşe giriş tarihi</label><input type="date" id="pd"><button class="b g" onclick="addP()">Kaydet</button></div>
+return `<div class="card" id="pc"><h2 style="display:flex;justify-content:space-between;align-items:center;gap:8px">Yeni personel<label style="display:flex;align-items:center;gap:6px;margin:0;font-size:.85rem;color:#991b1b"><input type="checkbox" id="pu" onchange="tgU()"> Kayıt dışı</label></h2><input id="pn" placeholder="Ad soyad"><input id="pt" placeholder="TC kimlik no" inputmode="numeric" maxlength="11"><input id="pj" placeholder="Görevi / mesleği"><label>İşe giriş tarihi</label><input type="date" id="pd"><div id="ux" style="display:none"><div class="card warn" style="margin-bottom:10px">⚠ SGK kaydı olmayan (kayıt dışı) işçi tespiti. Fotoğraf ekleyin.</div><label>Fotoğraf (telefondan seçin veya çekin)</label><input type="file" id="upf" accept="image/*"><label>Tespit notu (yer, koşullar vb.)</label><textarea id="upn" rows="2"></textarea></div><button class="b g" onclick="addP()">Kaydet</button></div>
 <div class="card"><h2>📁 Excel</h2><button class="b" onclick="expP()">Personeli Excel'e aktar</button><input type="file" id="xf" accept=".xlsx,.xls,.csv"><button class="b" onclick="impP()">Excel'den personel yükle</button><small>Sütunlar: Ad Soyad, TC, Görev, Giriş Tarihi (ilk satır başlık)</small></div>
 <div class="card"><div style="display:flex;justify-content:space-between;gap:8px"><h2>Personel (${L.length})</h2><select style="width:150px" onchange="srt=this.value;rc()">${[['a','İsim A-Z'],['z','İsim Z-A'],['n','Yeni → eski'],['o','Eski → yeni']].map(([k,n])=>`<option value="${k}"${srt==k?' selected':''}>${n}</option>`).join('')}</select></div>
 <button class="b sm dg" style="margin-bottom:10px" onclick="bulk('personnel')">Seçilenleri sil</button>
-<div class="tr"><table><tr><th><input type="checkbox" onclick="selAll(this,'personnel')"></th><th>Ad soyad</th><th>TC</th><th>Görev</th><th></th></tr>${L.map(p=>{const w=warns(p).length,o=(p.perf||[]).filter(a=>a.type==PT[0]&&!a.done).length;return `<tr><td><input type="checkbox" class="sel-personnel" value="${p.id}"></td><td style="color:var(--s);font-weight:700;cursor:pointer" onclick="pid='${p.id}';rc()">${esc(p.name)} ${w?`<span class="bg y">⚠ ${w}</span>`:''}${o?` <span class="bg r">${o} açık uygunsuzluk</span>`:''}</td><td>${esc(p.tc)}</td><td>${esc(p.job)}</td><td><button class="b sm dg" onclick="one('personnel','${p.id}')">Sil</button></td></tr>`}).join('')}</table></div></div>`}
-function addP(){const c=C(),name=$('pn').value.trim(),tc=$('pt').value.trim();if(!name)return alert('Ad soyad girin');
-if(tc&&!tcOk(tc)&&!confirm('TC kimlik numarası geçersiz görünüyor. Yine de kaydedilsin mi?'))return;
+<div class="tr"><table><tr><th><input type="checkbox" onclick="selAll(this,'personnel')"></th><th>Ad soyad</th><th>TC</th><th>Görev</th><th></th></tr>${L.map(p=>{const w=warns(p).length,o=(p.perf||[]).filter(a=>a.type==PT[0]&&!a.done).length;return `<tr><td><input type="checkbox" class="sel-personnel" value="${p.id}"></td><td style="color:var(--s);font-weight:700;cursor:pointer" onclick="pid='${p.id}';rc()">${esc(p.name)}${p.unreg?' <span class="bg r">KAYIT DIŞI</span>':''} ${w?`<span class="bg y">⚠ ${w}</span>`:''}${o?` <span class="bg r">${o} açık uygunsuzluk</span>`:''}</td><td>${esc(p.tc)}</td><td>${esc(p.job)}</td><td><button class="b sm dg" onclick="one('personnel','${p.id}')">Sil</button></td></tr>`}).join('')}</table></div></div>`}
+function tgU(){const u=$('pu').checked;$('ux').style.display=u?'block':'none';$('pc').classList.toggle('un',u);$('pn').placeholder=u?'Ad soyad (bilinmiyorsa boş bırakın)':'Ad soyad'}
+async function addP(){const c=C(),u=$('pu').checked;let name=$('pn').value.trim();const tc=$('pt').value.trim();
+if(!name){if(!u)return alert('Ad soyad girin');name='Kimliği belirsiz işçi'}
+if(!u&&tc&&!tcOk(tc)&&!confirm('TC kimlik numarası geçersiz görünüyor. Yine de kaydedilsin mi?'))return;
 if(tc&&c.personnel.some(p=>p.tc==tc)&&!confirm('Bu TC ile kayıtlı personel var. Yine de eklensin mi?'))return;
-c.personnel.push({id:uid(),name,tc,job:$('pj').value.trim(),date:$('pd').value,trainings:[],health:[],ppe:[]});save();rc()}
+const p={id:uid(),name,tc,job:$('pj').value.trim(),date:$('pd').value,trainings:[],health:[],ppe:[],perf:[]};
+if(u){p.unreg=true;p.note=$('upn').value.trim();const f=$('upf').files[0];if(f)try{p.img=await storeImg(f)}catch(e){return alert(e.message)}}
+c.personnel.push(p);save();rc()}
 function editP(){const p=C().personnel.find(x=>x.id==pid),n=prompt('Ad soyad',p.name);if(n===null)return;const t=prompt('TC kimlik no',p.tc);if(t===null)return;const j=prompt('Görev',p.job);if(j===null)return;p.name=n.trim()||p.name;p.tc=t.trim();p.job=j.trim();save();rc()}
 function detail(c){const p=c.personnel.find(x=>x.id==pid);if(!p){pid=null;return plist(c)}p.perf??=[];
 const sec=(f,t,ph)=>`<div class="card"><h2>${t}</h2><input id="${f}n" placeholder="${ph}"><label>Tarih</label><input type="date" id="${f}d">${f=='ppe'?'':`<label>Geçerlilik bitişi (isteğe bağlı)</label><input type="date" id="${f}e">`}<button class="b g" onclick="addSub('${f}')">Kaydet</button><ul>${p[f].map((r,i)=>`<li>${esc(r.date)} – ${esc(r.name)}${r.exp?' · bitiş '+esc(r.exp)+' '+(soon(days(r.exp))?badge(days(r.exp)):''):''} <button class="b sm dg" onclick="delSub('${f}',${i})">Sil</button></li>`).join('')}</ul></div>`;
-return `<button class="b sm" style="margin-bottom:10px" onclick="pid=null;rc()">← Listeye dön</button><div class="card" style="border:2px solid var(--p)"><h2>👤 ${esc(p.name)}</h2><p>TC: ${esc(p.tc)||'-'}</p><p>Görev: ${esc(p.job)||'-'}</p><p>İşe giriş: ${esc(p.date)||'-'}</p><div style="margin-top:12px"><button class="b" onclick="editP()">✎ Bilgileri düzenle</button><button class="b" onclick="pdfOpen()">📄 Sicil dosyası (PDF)</button></div></div>${perfCard(p)}${sec('trainings','Eğitim','Eğitim konusu')}${sec('health','Sağlık / muayene','Muayene türü')}${sec('ppe','KKD zimmet','Malzeme')}`}
+return `<button class="b sm" style="margin-bottom:10px" onclick="pid=null;rc()">← Listeye dön</button><div class="card" style="border:2px solid var(--p)"><h2>👤 ${esc(p.name)}</h2>${p.unreg?`<p><span class="bg r">KAYIT DIŞI – SGK kaydı yok</span></p>${p.img?`<img class="th" style="width:120px;height:150px;margin:6px 0" alt="" data-i="${p.img}" onclick="zoom('${p.img}')">`:''}${p.note?`<p style="white-space:pre-wrap">${esc(p.note)}</p>`:''}`:''}<p>TC: ${esc(p.tc)||'-'}</p><p>Görev: ${esc(p.job)||'-'}</p><p>İşe giriş: ${esc(p.date)||'-'}</p><div style="margin-top:12px"><button class="b" onclick="editP()">✎ Bilgileri düzenle</button><button class="b" onclick="pdfOpen()">📄 Sicil dosyası (PDF)</button></div></div>${perfCard(p)}${sec('trainings','Eğitim','Eğitim konusu')}${sec('health','Sağlık / muayene','Muayene türü')}${sec('ppe','KKD zimmet','Malzeme')}`}
 function perfCard(p){const E=p.perf.find(x=>x.id==eid),n=f=>p.perf.filter(f).length,L=[...p.perf].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 return `<div class="card" style="border:2px solid var(--d)"><h2>🦺 Saha İSG performansı</h2><div class="st" style="margin-bottom:12px"><div><b>${n(a=>a.type==PT[0]&&!a.done)}</b>Açık uygunsuzluk</div><div><b>${n(a=>a.type==PT[0]&&a.done)}</b>Giderilen</div><div><b>${n(a=>a.type==PT[1])}</b>Kurallara uyum</div></div>
 <label>Kayıt türü</label><select id="pft">${PT.map(t=>`<option${E&&E.type==t?' selected':''}>${t}</option>`).join('')}</select>
-<textarea id="pfd" rows="3" placeholder="Ne görüldü? Hangi kural ihlal edildi / uyuldu? Alınan önlem...">${esc(E?E.desc:'')}</textarea>
+<textarea id="pfd" rows="3" placeholder="Ne görüldü? Hangi kural ihlal edildi / uyuldu? Alınan önlem...">${esc(E?E.desc:'')}</textarea><button type="button" class="b sm v" style="margin-bottom:10px" onclick="mic('pfd',this)">🎤 Sesle yaz</button>
 <label>Tarih</label><input type="date" id="pfx" value="${esc(E?E.date:today())}">
 <label>Fotoğraf${E&&E.img?' (seçmezseniz mevcut fotoğraf kalır)':''}</label><input type="file" id="pff" accept="image/*">
 <button class="b g" onclick="savePerf()">${E?'Güncelle':'Kaydet'}</button>${E?'<button class="b" onclick="eid=null;rc()">Vazgeç</button>':''}
@@ -127,7 +134,7 @@ function addSub(f){const p=C().personnel.find(x=>x.id==pid),n=$(f+'n').value.tri
 function delSub(f,i){C().personnel.find(x=>x.id==pid)[f].splice(i,1);save();rc()}
 
 /* Denetim / olay */
-function acc(c){return `<div class="card"><h2>Denetim / kaza / uygunsuzluk ekle</h2><select id="at">${TY.map(t=>`<option>${t}</option>`).join('')}</select><textarea id="ad" rows="3" placeholder="Olay özeti ve alınan önlem..."></textarea><label>Tarih</label><input type="date" id="ax" value="${today()}"><label>Fotoğraf</label><input type="file" id="af" accept="image/*"><button class="b g" onclick="addA()">Kayıt ekle</button></div>
+function acc(c){return `<div class="card"><h2>Denetim / kaza / uygunsuzluk ekle</h2><select id="at">${TY.map(t=>`<option>${t}</option>`).join('')}</select><textarea id="ad" rows="3" placeholder="Olay özeti ve alınan önlem..."></textarea><button type="button" class="b sm v" style="margin-bottom:10px" onclick="mic('ad',this)">🎤 Sesle yaz</button><label>Tarih</label><input type="date" id="ax" value="${today()}"><label>Fotoğraf</label><input type="file" id="af" accept="image/*"><button class="b g" onclick="addA()">Kayıt ekle</button></div>
 <div class="card"><h2>📁 Excel'den kayıt yükle</h2><small>Sütunlar: Tür, Açıklama, Tarih (ilk satır başlık). Fotoğraflar aktarılmaz.</small><input type="file" id="xa" accept=".xlsx,.xls,.csv" style="margin-top:8px"><button class="b" onclick="impA()">Yükle</button></div>
 <div class="card"><h2>Geçmiş (${c.accidents.length})</h2><button class="b sm dg" style="margin-bottom:10px" onclick="bulk('accidents')">Seçilenleri sil</button><div class="tr"><table><tr><th><input type="checkbox" onclick="selAll(this,'accidents')"></th><th>Görsel</th><th>Tür</th><th>Açıklama</th><th>Tarih</th><th></th></tr>${c.accidents.map(a=>`<tr><td><input type="checkbox" class="sel-accidents" value="${a.id}"></td><td>${a.img?`<img class="th" alt="" data-i="${a.img}" onclick="zoom('${a.img}')">`:'-'}</td><td><span class="bg ${(a.type||'').includes('Kaza')?'r':'gr'}">${esc(a.type)}</span></td><td>${esc(a.desc)}</td><td>${esc(a.date)}</td><td><button class="b sm" onclick="editA('${a.id}')">✎</button> <button class="b sm dg" onclick="one('accidents','${a.id}')">Sil</button></td></tr>`).join('')}</table></div></div>`}
 async function addA(){const d=$('ad').value.trim();if(!d)return alert('Açıklama girin');const f=$('af').files[0],a={id:uid(),type:$('at').value,desc:d,date:$('ax').value||today()};
@@ -183,6 +190,96 @@ return `<div style="padding:20px;color:#000;background:#fff;font-size:.9rem"><di
 function pdfOpen(){cvMode=false;$('pmt').textContent='📄 Sicil dosyası önizleme';$('pv').innerHTML=pdfHtml();$('pm').style.display='block'}
 function pdfDl(){if(cvMode)return cvDl();const p=C().personnel.find(x=>x.id==pid),e=document.createElement('div');e.innerHTML=pdfHtml();html2pdf().from(e).set({margin:10,filename:p.name.replace(/\s+/g,'_')+'_isg_sicil.pdf',image:{type:'jpeg',quality:.98},html2canvas:{scale:2},jsPDF:{unit:'mm',format:'a4'}}).save().then(()=>$('pm').style.display='none')}
 
+/* İSG mevzuatı ve emsal kararlar: elle yönetilir, dış sitelerden otomatik veri çekmez */
+const gl=t=>'https://www.google.com/search?q='+encodeURIComponent('site:mevzuat.gov.tr '+t),
+LAW=[['6331 sayılı İş Sağlığı ve Güvenliği Kanunu','İSG\'nin temel kanunu: işveren ve çalışan yükümlülükleri, İSG hizmetleri, risk değerlendirmesi, eğitim, sağlık gözetimi, çalışmanın durdurulması ve idari para cezaları.','https://mevzuat.gov.tr/mevzuat?MevzuatNo=6331&MevzuatTur=1&MevzuatTertip=5'],
+['4857 sayılı İş Kanunu','İş ilişkisinin temel kanunu: iş sözleşmesi, çalışma ve dinlenme süreleri, işçi ve işveren yükümlülükleri.'],
+['5510 sayılı Sosyal Sigortalar ve Genel Sağlık Sigortası Kanunu','İş kazası ve meslek hastalığının tanımı, SGK\'ya bildirim yükümlülüğü, sigortalı hakları ve SGK\'nın rücu hakkı.'],
+['6098 sayılı Türk Borçlar Kanunu','İşverenin işçiyi koruma borcu ve tazminat sorumluluğu (iş kazası tazminat davalarının dayanaklarından).'],
+['5237 sayılı Türk Ceza Kanunu','İş kazalarında işveren ve yetkililerin taksirle öldürme veya yaralama nedeniyle cezai sorumluluğu.'],
+['7036 sayılı İş Mahkemeleri Kanunu','İş davalarında görevli mahkemeler ve dava şartı olarak arabuluculuk.']],
+REG=['İş Sağlığı ve Güvenliği Risk Değerlendirmesi Yönetmeliği','İş Sağlığı ve Güvenliği Hizmetleri Yönetmeliği','İş Güvenliği Uzmanlarının Görev, Yetki, Sorumluluk ve Eğitimleri Hakkında Yönetmelik','İşyeri Hekimi ve Diğer Sağlık Personelinin Görev, Yetki, Sorumluluk ve Eğitimleri Hakkında Yönetmelik','İşyerlerinde İşveren veya İşveren Vekili Tarafından Yürütülecek İş Sağlığı ve Güvenliği Hizmetlerine İlişkin Yönetmelik','Çalışanların İş Sağlığı ve Güvenliği Eğitimlerinin Usul ve Esasları Hakkında Yönetmelik','İş Sağlığı ve Güvenliği Kurulları Hakkında Yönetmelik','İşyerlerinde Acil Durumlar Hakkında Yönetmelik','Kişisel Koruyucu Donanımların İşyerlerinde Kullanılması Hakkında Yönetmelik','Yapı İşlerinde İş Sağlığı ve Güvenliği Yönetmeliği','İş Ekipmanlarının Kullanımında Sağlık ve Güvenlik Şartları Yönetmeliği','İşyeri Bina ve Eklentilerinde Alınacak Sağlık ve Güvenlik Önlemlerine İlişkin Yönetmelik','Ağır ve Tehlikeli İşler Yönetmeliği','Geçici veya Belirli Süreli İşlerde İş Sağlığı ve Güvenliği Hakkında Yönetmelik','Kimyasal Maddelerle Çalışmalarda Sağlık ve Güvenlik Önlemleri Hakkında Yönetmelik','Kanserojen ve Mutajen Maddelerle Çalışmalarda Sağlık ve Güvenlik Önlemleri Hakkında Yönetmelik','Asbestle Çalışmalarda Sağlık ve Güvenlik Önlemleri Hakkında Yönetmelik','Biyolojik Etkenlere Maruziyet Risklerinin Önlenmesi Hakkında Yönetmelik','Çalışanların Gürültü ile İlgili Risklerden Korunmalarına Dair Yönetmelik','Çalışanların Titreşimle İlgili Risklerden Korunmalarına Dair Yönetmelik','Patlayıcı Ortamların Tehlikelerinden Çalışanların Korunması Hakkında Yönetmelik','Elle Taşıma İşleri Yönetmeliği','Ekranlı Araçlarla Çalışmalarda Sağlık ve Güvenlik Önlemleri Hakkında Yönetmelik','Sağlık ve Güvenlik İşaretleri Yönetmeliği','Maden İşyerlerinde İş Sağlığı ve Güvenliği Yönetmeliği','Sosyal Sigorta İşlemleri Yönetmeliği','İşyeri Tehlike Sınıfları Tebliği'],
+shell=(t,b)=>{cid=pid=null;setBar(1);$('app').innerHTML=`<header><h1>${t}</h1><button class="b sm" onclick="home()">Ana sayfa</button></header>${b}`},
+chkBar=fn=>{const c=localStorage.getItem('isg_chk'),d=c?Math.floor((Date.now()-new Date(c))/864e5):null,old=d===null||d>=7;return `<div class="card ${old?'warn':''}">${d===null?'⚠ Mevzuat henüz kontrol edilmedi.':old?'⚠ Son kontrol '+d+' gün önce (haftalık kontrol önerilir).':'✓ Son kontrol '+d+' gün önce.'} Güncel metinler için <a href="https://www.mevzuat.gov.tr" target="_blank" rel="noopener">mevzuat.gov.tr</a> adresini kontrol edin.<button class="b sm" style="display:block;margin-top:8px" onclick="localStorage.setItem('isg_chk',today());${fn}()">Kontrol ettim ✓</button></div>`},
+lk=(u,t,c)=>`<a class="b sm ${c||''}" style="text-decoration:none;margin:0 6px 6px 0" href="${esc(u)}" target="_blank" rel="noopener">${t} ↗</a>`,
+box='border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:8px';
+let lv='k';
+function law(v){if(v)lv=v;const tb=(k,n)=>`<button class="tb ${lv==k?'on':''}" onclick="law('${k}')">${n}</button>`;
+shell('📖 İSG Kanunu',chkBar('law')+`<div class="tabs">${tb('k','Kanunlar')}${tb('y','Yönetmelikler / Tebliğler')}</div>`+(lv=='k'?`<div class="card"><h2>İSG ile ilgili temel kanunlar</h2>${LAW.map(([t,d,u])=>`<div style="${box}"><b>${esc(t)}</b><p style="font-size:.85rem;color:#475569;margin:4px 0 8px">${esc(d)}</p>${lk(u||gl(t),'Resmî metni aç')}</div>`).join('')}<small>Bu liste başlangıç içindir, mevzuatın tamamı değildir. Metinlerin güncelliği resmî kaynaktan doğrulanmalıdır.</small></div>`:`<div class="card"><h2>Yönetmelik ve tebliğler</h2><input placeholder="Ara..." oninput="rl(this.value)"><div id="rl">${rlHtml('')}</div><small>Liste başlangıç içindir, tam değildir. "Resmî kaynakta ara" bağlantısı mevzuat.gov.tr içinde arama açar; güncel ve değişiklikli metni orada görün.</small></div>`))}
+const rlHtml=q=>{const L=REG.filter(t=>t.toLocaleLowerCase('tr').includes(q.toLocaleLowerCase('tr')));return L.map(t=>`<div style="${box}"><b>${esc(t)}</b><div style="margin-top:6px">${lk(gl(t),'Resmî kaynakta ara')}</div></div>`).join('')||'<p class="mt">Sonuç yok.</p>'};
+function rl(q){$('rl').innerHTML=rlHtml(q)}
+const SON=['İşçi / hak sahibi lehine','İşveren lehine','Kısmen kabul','Bozma','Onama'],EF=[['daire','Daire (örn: Yargıtay 21. HD)'],['esas','Esas no'],['karar','Karar no'],['tarih','Karar tarihi','date'],['link','Bağlantı (isteğe bağlı)','url']];
+let ee=null;
+const elHtml=q=>{const L=[...db.emsal].sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||'')).filter(x=>JSON.stringify(x).toLocaleLowerCase('tr').includes(q.toLocaleLowerCase('tr')));return L.map(x=>`<div style="${box}"><b>${esc(x.daire)}</b> <small>E. ${esc(x.esas)} K. ${esc(x.karar)} · ${esc(x.tarih)}</small><br><span class="bg gr">${esc(x.sonuc)}</span><p style="white-space:pre-wrap;font-size:.85rem;margin:6px 0">${esc(x.ozet)}</p>${x.link?lk(x.link,'Kararı aç'):''}<button class="b sm" onclick="emEdit('${x.id}')">✎</button> <button class="b sm dg" onclick="emDel('${x.id}')">Sil</button></div>`).join('')||'<p class="mt">Henüz karar eklenmedi.</p>'};
+function el(q){$('el').innerHTML=elHtml(q)}
+function emsal(){const E=db.emsal.find(x=>x.id==ee)||{};
+shell('⚖️ Emsal Kararlar',`<div class="card"><h2>Resmî kaynaklar</h2>${lk('https://karararama.yargitay.gov.tr/','Yargıtay Karar Arama')}${lk('https://www.yargitay.gov.tr/item/1763/yargitay-ictihat-merkezi-kullanima-acilmistir','Yargıtay İçtihat Merkezi (YİM)','v')}<small>YİM'de arama kriterinizi (örn. iş kazası tazminat) kaydederseniz yeni uygun karar yüklendiğinde e-posta ile bilgilendirilirsiniz. Uygulama bu siteleri otomatik taramaz; bulduğunuz kararları aşağıya kaydedin.</small></div>
+<div class="card"><h2>${E.id?'Kararı düzenle':'Karar ekle'}</h2>${EF.map(([k,l,t])=>`<label>${l}</label><input id="em_${k}" type="${t||'text'}" autocomplete="off" value="${esc(E[k])}">`).join('')}<label>Sonuç</label><select id="em_sonuc">${SON.map(o=>`<option${E.sonuc==o?' selected':''}>${o}</option>`).join('')}</select><label>Özet (kısa notlar, kusur oranı, tazminat kalemleri...)</label><textarea id="em_ozet" rows="3">${esc(E.ozet)}</textarea><button type="button" class="b sm v" style="margin-bottom:10px" onclick="mic('em_ozet',this)">🎤 Sesle yaz</button><button class="b g" onclick="emSave()">${E.id?'Güncelle':'Kaydet'}</button>${E.id?'<button class="b" onclick="ee=null;emsal()">Vazgeç</button>':''}</div>
+<div class="card"><h2>Kayıtlı kararlar (${db.emsal.length})</h2><input placeholder="Kararlarda ara..." oninput="el(this.value)"><div id="el">${elHtml('')}</div></div>`)}
+function emSave(){const o={};[...EF.map(x=>x[0]),'sonuc','ozet'].forEach(k=>o[k]=$('em_'+k).value.trim());if(o.link&&!/^https?:\/\//i.test(o.link))o.link='';if(!o.daire&&!o.ozet)return alert('En az daire veya özet girin');const E=db.emsal.find(x=>x.id==ee);if(E)Object.assign(E,o);else db.emsal.push({id:uid(),...o});ee=null;save();emsal()}
+function emEdit(id){ee=id;emsal();window.scrollTo(0,0)}
+function emDel(id){if(!confirm('Bu karar silinsin mi?'))return;db.emsal=db.emsal.filter(x=>x.id!=id);save();emsal()}
+
+/* Takvim ve alarm: uygulama açıkken uyarır; kapalıyken telefon takvimi için .ics */
+const MN=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'],
+RM=[[0,'Zamanında'],[15,'15 dk önce'],[60,'1 saat önce'],[1440,'1 gün önce'],[10080,'1 hafta önce']],
+p2=n=>String(n).padStart(2,'0'),
+ld=()=>{const n=new Date();return n.getFullYear()+'-'+p2(n.getMonth()+1)+'-'+p2(n.getDate())},
+alarmAt=e=>new Date(e.date+'T'+(e.time||'09:00')).getTime()-(e.remind||0)*6e4;
+let cm=new Date(new Date().getFullYear(),new Date().getMonth(),1),ce=null,cd='';
+function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator();o.connect(c.destination);o.frequency.value=880;o.start();setTimeout(()=>{o.stop();c.close()},400)}catch(x){}}
+function chkAlarms(){if(!$('bar')||$('bar').style.display!='flex'||!db.events)return;const due=db.events.filter(e=>!e.fired&&alarmAt(e)<=Date.now());if(!due.length)return;
+due.forEach(e=>{e.fired=true;$('alt').innerHTML+=`<div style="margin-bottom:6px">⏰ <b>${esc(e.title)}</b><br><small>${esc(e.date)} ${esc(e.time)}${e.note?' · '+esc(e.note):''}</small></div>`;try{if(window.Notification&&Notification.permission=='granted')new Notification('⏰ İSG Hatırlatma',{body:e.title+' — '+e.date+(e.time?' '+e.time:''),tag:e.id})}catch(x){}});
+save();$('al').style.display='block';try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(x){}beep()}
+function askNotif(){if(!window.Notification)return alert('Bu tarayıcı bildirimleri desteklemiyor.');Notification.requestPermission().then(()=>cal())}
+function ics(list){if(!list.length)return alert('Eklenecek etkinlik yok');const f=d=>d.getUTCFullYear()+p2(d.getUTCMonth()+1)+p2(d.getUTCDate())+'T'+p2(d.getUTCHours())+p2(d.getUTCMinutes())+'00Z',x=t=>String(t||'').replace(/\\/g,'\\\\').replace(/[,;]/g,m=>'\\'+m).replace(/\n/g,'\\n');
+let o='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//ISG Asistan//TR\r\nCALSCALE:GREGORIAN\r\n';
+list.forEach(e=>{const t=new Date(e.date+'T'+(e.time||'09:00'));o+=`BEGIN:VEVENT\r\nUID:${e.id}@isg-asistan\r\nDTSTAMP:${f(new Date())}\r\nDTSTART:${f(t)}\r\nDTEND:${f(new Date(t.getTime()+36e5))}\r\nSUMMARY:${x(e.title)}\r\nDESCRIPTION:${x(e.note)}\r\nBEGIN:VALARM\r\nACTION:DISPLAY\r\nDESCRIPTION:${x(e.title)}\r\nTRIGGER:${e.remind?'-PT'+e.remind+'M':'PT0S'}\r\nEND:VALARM\r\nEND:VEVENT\r\n`});
+dl(new Blob([o+'END:VCALENDAR\r\n'],{type:'text/calendar'}),list.length==1?'hatirlatma.ics':'isg_takvim.ics')}
+function icsOne(id){ics(db.events.filter(x=>x.id==id))}
+function calNav(d){cm=new Date(cm.getFullYear(),cm.getMonth()+d,1);cal()}
+function calPick(k){cd=k;ce=null;cal();$('ev_t').scrollIntoView({block:'center'})}
+function calEdit(id){ce=id;cal();$('ev_t').scrollIntoView({block:'center'})}
+function calDel(id){if(!confirm('Etkinlik silinsin mi?'))return;db.events=db.events.filter(x=>x.id!=id);save();cal()}
+function calSave(){const t=$('ev_t').value.trim(),d=$('ev_d').value;if(!t||!d)return alert('Başlık ve tarih girin');const o={title:t,date:d,time:$('ev_h').value,remind:+$('ev_r').value,note:$('ev_n').value.trim()};o.fired=alarmAt(o)<=Date.now();const E=db.events.find(x=>x.id==ce);if(E)Object.assign(E,o);else db.events.push({id:uid(),...o});ce=null;cd='';save();cal()}
+function cal(){const E=db.events.find(x=>x.id==ce)||{},y=cm.getFullYear(),m=cm.getMonth(),first=(new Date(y,m,1).getDay()+6)%7,dim=new Date(y,m+1,0).getDate(),td=ld(),
+np=!window.Notification?'Bu tarayıcı bildirim desteklemiyor; hatırlatmalar uygulama içinde uyarı olarak çıkar.':Notification.permission=='granted'?'✓ Bildirimler açık.':Notification.permission=='denied'?'Bildirim izni engellenmiş; tarayıcı ayarlarından açın.':'<button class="b" onclick="askNotif()">🔔 Bildirimleri aç</button>';
+let cells='';for(let i=0;i<first;i++)cells+='<div></div>';
+for(let d=1;d<=dim;d++){const k=y+'-'+p2(m+1)+'-'+p2(d),n=db.events.filter(e=>e.date==k).length;cells+=`<div onclick="calPick('${k}')" style="text-align:center;padding:8px 0;border-radius:8px;cursor:pointer;${k==td?'background:#dbeafe;font-weight:700;':''}${k==(E.date||cd)?'outline:2px solid var(--s);':''}">${d}<div style="height:8px;color:var(--d);font-size:.6rem">${n?'●':''}</div></div>`}
+const L=[...db.events].sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
+shell('📅 Takvim',`<div class="card"><h2>🔔 Hatırlatma bildirimleri</h2>${np}<small style="display:block;margin:6px 0">Alarm, uygulama açıkken çalar (uyarı, titreşim, ses). Uygulama kapalıyken telefon bildirimi almak için etkinliği .ics ile telefonunuzun takvimine ekleyin; alarm orada çalışır.</small><button class="b" onclick="ics(db.events)">⬇ Tüm etkinlikleri telefon takvimine ekle (.ics)</button></div>
+<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><button class="b sm" onclick="calNav(-1)">‹</button><h2 style="border:0;margin:0">${MN[m]} ${y}</h2><button class="b sm" onclick="calNav(1)">›</button></div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:10px;font-size:.85rem">${['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map(x=>`<b style="text-align:center;color:#64748b">${x}</b>`).join('')}${cells}</div></div>
+<div class="card"><h2>${E.id?'Etkinliği düzenle':'Etkinlik / alarm ekle'}</h2><input id="ev_t" placeholder="Başlık (örn: Yangın tatbikatı)" autocomplete="off" value="${esc(E.title)}"><label>Tarih</label><input type="date" id="ev_d" value="${esc(E.date||cd||td)}"><label>Saat (boşsa 09:00)</label><input type="time" id="ev_h" value="${esc(E.time)}"><label>Alarm</label><select id="ev_r">${RM.map(([v,l])=>`<option value="${v}"${(E.remind||0)==v?' selected':''}>${l}</option>`).join('')}</select><textarea id="ev_n" rows="2" placeholder="Not">${esc(E.note)}</textarea><button type="button" class="b sm v" style="margin-bottom:10px" onclick="mic('ev_n',this)">🎤 Sesle yaz</button><button class="b g" onclick="calSave()">${E.id?'Güncelle':'Kaydet'}</button>${E.id?'<button class="b" onclick="ce=null;cal()">Vazgeç</button>':''}</div>
+<div class="card"><h2>Etkinlikler (${L.length})</h2>${L.map(e=>`<div style="${box};${e.date<td?'opacity:.6':''}"><b>${esc(e.title)}</b><br><small>${esc(e.date)} ${esc(e.time)} · ${RM.find(r=>r[0]==(e.remind||0))[1]}</small>${e.note?`<p style="font-size:.85rem;white-space:pre-wrap">${esc(e.note)}</p>`:''}<div style="margin-top:6px"><button class="b sm" onclick="calEdit('${e.id}')">✎</button> <button class="b sm v" onclick="icsOne('${e.id}')">⬇ .ics</button> <button class="b sm dg" onclick="calDel('${e.id}')">Sil</button></div></div>`).join('')||'<p class="mt">Henüz etkinlik yok.</p>'}</div>`)}
+
+/* Sesle yazma */
+let rec=null;
+function mic(id,btn){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return alert('Bu tarayıcı sesle yazmayı desteklemiyor. Klavyenizdeki mikrofon düğmesini kullanabilirsiniz.');
+if(rec){rec.stop();return}
+const t=$(id);rec=new SR();rec.lang='tr-TR';rec.continuous=true;rec.interimResults=false;
+rec.onstart=()=>{btn.textContent='⏹ Dinleniyor… (durdurmak için dokun)';btn.classList.add('dg')};
+rec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)t.value+=(t.value&&!/\s$/.test(t.value)?' ':'')+e.results[i][0].transcript.trim()};
+rec.onerror=e=>{if(e.error=='not-allowed'||e.error=='service-not-allowed')alert('Mikrofon izni verilmedi. Tarayıcı ayarlarından izin verin.')};
+rec.onend=()=>{rec=null;btn.textContent='🎤 Sesle yaz';btn.classList.remove('dg')};
+try{rec.start()}catch(e){rec=null}}
+
+/* Yedek raporları: Excel ve PDF (okunabilir, geri yüklenemez) */
+function expXls(){try{const w=XLSX.utils.book_new(),add=(n,rows)=>XLSX.utils.book_append_sheet(w,XLSX.utils.json_to_sheet(rows.length?rows:[{'Firma':''}]),n),
+F=[],Pn=[],Rk=[],Pf=[],Ac=[],Dc=[];
+db.companies.forEach(c=>{F.push({'Firma':c.name,'Açıklama':c.desc,'Personel':c.personnel.length,'Denetim / olay':c.accidents.length,'Döküman':(c.docs||[]).length});
+c.personnel.forEach(p=>{Pn.push({'Firma':c.name,'Ad Soyad':p.name,'TC':p.tc,'Görev':p.job,'Giriş Tarihi':p.date,'Kayıt Durumu':p.unreg?'Kayıt dışı':'Kayıtlı','Not':p.note||''});
+[['Eğitim','trainings'],['Sağlık / Muayene','health'],['KKD Zimmet','ppe']].forEach(([t,f])=>(p[f]||[]).forEach(r=>Rk.push({'Firma':c.name,'Personel':p.name,'Tür':t,'Konu':r.name,'Tarih':r.date,'Geçerlilik Bitişi':r.exp||''})));
+(p.perf||[]).forEach(a=>Pf.push({'Firma':c.name,'Personel':p.name,'Tür':a.type,'Durum':a.type==PT[0]?(a.done?'Giderildi':'Açık'):'Uyum','Açıklama':a.desc,'Tarih':a.date}))});
+c.accidents.forEach(a=>Ac.push({'Firma':c.name,'Tür':a.type,'Açıklama':a.desc,'Tarih':a.date}));
+(c.docs||[]).forEach(d=>Dc.push({'Firma':c.name,'Tür':d.cat,'Döküman':d.name,'Tarih':d.date,'Boyut (MB)':+(d.size/1048576).toFixed(2)}))});
+add('Firmalar',F);add('Personel',Pn);add('Eğitim-Muayene-KKD',Rk);add('Saha performansı',Pf);add('Denetim-Olay',Ac);add('Dökümanlar',Dc);
+XLSX.writeFile(w,'isg_rapor_'+today()+'.xlsx')}catch(e){alert('Excel oluşturulamadı: '+e.message)}}
+async function expPdf(){try{const t=(h,rows)=>`<table style="width:100%;border-collapse:collapse;font-size:.75rem;margin-bottom:10px"><tr>${h.map(x=>`<th style="border:1px solid #999;padding:3px;background:#e2e8f0;text-align:left">${x}</th>`).join('')}</tr>${rows.length?rows.map(r=>`<tr>${r.map(v=>`<td style="border:1px solid #bbb;padding:3px">${esc(v)}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${h.length}" style="padding:3px;color:#777">Kayıt yok</td></tr>`}</table>`,
+H=x=>`<h3 style="color:#1e3a8a;margin:10px 0 4px;font-size:.9rem">${x}</h3>`,
+body=db.companies.map((c,i)=>`<div style="${i?'page-break-before:always':''}"><h2 style="color:#1e3a8a;border-bottom:2px solid #1e3a8a;font-size:1.1rem">${esc(c.name)}</h2><p style="font-size:.8rem;color:#555">${esc(c.desc)}</p>${H('Personel ('+c.personnel.length+')')}${t(['Ad Soyad','TC','Görev','Giriş','Durum','Açık uygunsuzluk'],c.personnel.map(p=>[p.name,p.tc,p.job,p.date,p.unreg?'Kayıt dışı':'Kayıtlı',(p.perf||[]).filter(a=>a.type==PT[0]&&!a.done).length]))}${H('Denetim / olay ('+c.accidents.length+')')}${t(['Tarih','Tür','Açıklama'],c.accidents.map(a=>[a.date,a.type,a.desc]))}${H('Personel saha performansı')}${t(['Personel','Tarih','Durum','Açıklama'],c.personnel.flatMap(p=>(p.perf||[]).map(a=>[p.name,a.date,a.type==PT[0]?(a.done?'Giderildi':'Açık'):'Uyum',a.desc])))}${H('Dökümanlar')}${t(['Tür','Ad','Tarih'],(c.docs||[]).map(d=>[d.cat,d.name,d.date]))}</div>`).join('')||'<p>Kayıt yok.</p>',
+e=document.createElement('div');e.innerHTML=`<div style="padding:16px;color:#000;background:#fff;font-family:Arial,sans-serif"><h1 style="color:#1e3a8a;font-size:1.3rem">İSG Saha Yönetim – Veri Raporu</h1><p style="font-size:.8rem;color:#555;margin-bottom:12px">Oluşturulma: ${today()}</p>${body}</div>`;
+await html2pdf().set({margin:8,filename:'isg_rapor_'+today()+'.pdf',image:{type:'jpeg',quality:.95},html2canvas:{scale:1.5},jsPDF:{unit:'mm',format:'a4'},pagebreak:{mode:['css','legacy']}}).from(e).save()}catch(x){alert('PDF oluşturulamadı: '+x.message)}}
+
 /* Yedek */
 function dl(b,n){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5e3)}
 async function backup(){try{const ks=await tx('img','readonly',o=>o.getAllKeys()),vs=await tx('img','readonly',o=>o.getAll()),im={};ks.forEach((k,i)=>im[k]=vs[i]);dl(new Blob([JSON.stringify({v:2,db,im})],{type:'application/json'}),'isg_yedek_'+today()+'.json');localStorage.setItem('isg_bak',Date.now());bak()}catch(e){alert('Yedek alınamadı: '+e.message)}}
@@ -193,8 +290,9 @@ const b64=u=>btoa(String.fromCharCode(...u)),ub=s=>Uint8Array.from(atob(s),c=>c.
 hash=async(pw,salt)=>b64(new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:2e5},await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveBits']),256))),
 A=()=>{try{return JSON.parse(localStorage.getItem('isg_auth'))}catch(e){return null}};
 const savePw=(id,pw)=>{try{window.PasswordCredential&&navigator.credentials.store(new PasswordCredential({id,password:pw,name:id})).catch(()=>{})}catch(e){}};
+const keep=v=>v?localStorage.setItem('isg_keep','1'):localStorage.removeItem('isg_keep');
 let amode='email',fails=0,lock=0;
-function gate(){closePanel();const a=A();if(!a)return authUI(1);sessionStorage.getItem('isg_ok')?home():authUI(0)}
+function gate(){closePanel();const a=A();if(!a)return authUI(1);if(!consentOk())return consentUI();(sessionStorage.getItem('isg_ok')||localStorage.getItem('isg_keep'))?home():authUI(0)}
 function authUI(reg){setBar(0);const a=A(),em=amode=='email';
 $('app').innerHTML=`<header><h1>🏗️ İSG Saha Yönetim Asistanı</h1></header><div class="card"><h2>${reg?'Kayıt ol':'Giriş yap'}</h2>
 ${reg?`<div class="tabs"><button type="button" class="tb ${em?'on':''}" onclick="amode='email';authUI(1)">E-posta</button><button type="button" class="tb ${em?'':'on'}" onclick="amode='phone';authUI(1)">Telefon</button></div>`:''}
@@ -202,20 +300,20 @@ ${reg?`<div class="tabs"><button type="button" class="tb ${em?'on':''}" onclick=
 ${reg?`<input id="ai" name="username" type="${em?'email':'tel'}" placeholder="${em?'E-posta adresi':'Telefon no (5xx xxx xx xx)'}" autocomplete="username" required>`:`<input id="ai" name="username" type="${/@/.test(a.ident)?'email':'tel'}" value="${esc(a.ident)}" autocomplete="username" readonly>`}
 <input id="ap" name="password" type="password" placeholder="Şifre${reg?' (en az 8 karakter)':''}" autocomplete="${reg?'new-password':'current-password'}" required${reg?'':' autofocus'}>
 ${reg?'<input id="ap2" name="password2" type="password" placeholder="Şifre tekrar" autocomplete="new-password" required>':''}
-<button type="submit" class="b g">${reg?'Kayıt ol':'Giriş yap'}</button></form><small>Hesap ve veriler yalnızca bu cihazda saklanır.</small>
+${reg?consentBlock():''}<label style="display:flex;align-items:center;gap:8px;font-size:.9rem;margin-bottom:10px"><input type="checkbox" id="ak"> Oturumu açık tut</label><button type="submit" class="b g">${reg?'Kayıt ol':'Giriş yap'}</button></form><small>Hesap ve veriler yalnızca bu cihazda saklanır.</small>
 ${reg?'':'<div style="margin-top:10px"><button type="button" class="b sm" onclick="forgot()">Şifremi unuttum</button></div>'}</div>`}
-async function signup(){const id=($('ai').value||'').trim(),pw=$('ap').value;let v;
+async function signup(){if(!consentAll())return alert('Devam etmek için tüm metinleri okuyup onaylamanız gerekir.');const id=($('ai').value||'').trim(),pw=$('ap').value;let v;
 if(amode=='email'){if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(id))return alert('Geçerli bir e-posta adresi girin');v=id.toLowerCase()}
 else{v=id.replace(/[\s()-]/g,'');if(!/^\+?\d{10,14}$/.test(v))return alert('Geçerli bir telefon numarası girin')}
 if(pw.length<8)return alert('Şifre en az 8 karakter olmalı');if(pw!=$('ap2').value)return alert('Şifreler eşleşmiyor');
 if(!crypto.subtle)return alert('Bu tarayıcı güvenli şifrelemeyi desteklemiyor (https gerekir).');
-const salt=crypto.getRandomValues(new Uint8Array(16));localStorage.setItem('isg_auth',JSON.stringify({ident:v,salt:b64(salt),hash:await hash(pw,salt)}));savePw(v,pw);sessionStorage.setItem('isg_ok','1');home()}
+const salt=crypto.getRandomValues(new Uint8Array(16));localStorage.setItem('isg_auth',JSON.stringify({ident:v,salt:b64(salt),hash:await hash(pw,salt)}));savePw(v,pw);saveConsent();keep($('ak').checked);sessionStorage.setItem('isg_ok','1');home()}
 async function login(){if(Date.now()<lock)return alert('Çok fazla hatalı deneme. '+Math.ceil((lock-Date.now())/1e3)+' saniye bekleyin.');const a=A();
-if(await hash($('ap').value,ub(a.salt))===a.hash){fails=0;savePw(a.ident,$('ap').value);sessionStorage.setItem('isg_ok','1');home()}else{if(++fails>=5){lock=Date.now()+3e4;fails=0}alert('Şifre hatalı')}}
-function logout(){sessionStorage.removeItem('isg_ok');cid=pid=null;gate()}
+if(await hash($('ap').value,ub(a.salt))===a.hash){fails=0;savePw(a.ident,$('ap').value);keep($('ak').checked);sessionStorage.setItem('isg_ok','1');home()}else{if(++fails>=5){lock=Date.now()+3e4;fails=0}alert('Şifre hatalı')}}
+function logout(){sessionStorage.removeItem('isg_ok');keep(false);cid=pid=null;gate()}
 async function chpw(){const a=A(),n=$('np').value;if(await hash($('op').value,ub(a.salt))!==a.hash)return alert('Mevcut şifre hatalı');if(n.length<8)return alert('Yeni şifre en az 8 karakter olmalı');const s=crypto.getRandomValues(new Uint8Array(16));a.salt=b64(s);a.hash=await hash(n,s);localStorage.setItem('isg_auth',JSON.stringify(a));savePw(a.ident,n);alert('Şifre değiştirildi');home()}
 async function forgot(){const t=(prompt('Şifre sıfırlanırsa bu cihazdaki TÜM veriler (firmalar, personel, fotoğraflar, dökümanlar) silinir; yedeğiniz yoksa geri getirilemez.\nOnaylamak için SİL yazın:')||'').trim().toUpperCase().replace('İ','I');if(t!=='SIL')return;
-await tx('img','readwrite',o=>o.clear());await tx('kv','readwrite',o=>o.clear());['isg_auth','isg_multi_db','isg_bak'].forEach(k=>localStorage.removeItem(k));sessionStorage.clear();db={companies:[]};cache.clear();gate()}
+await tx('img','readwrite',o=>o.clear());await tx('kv','readwrite',o=>o.clear());['isg_auth','isg_multi_db','isg_bak','isg_keep','isg_consent'].forEach(k=>localStorage.removeItem(k));sessionStorage.clear();db={companies:[]};cache.clear();gate()}
 
 /* Profil / CV */
 const PK=['name','title','cert','phone','email','city','about','skills'],
@@ -227,7 +325,7 @@ per=(k,x)=>k=='certs'?[mf(x.from),x.to&&'Geçerlilik: '+mf(x.to)].filter(Boolean
 srtP=(a,b)=>(b.from||'').localeCompare(a.from||''),
 cvName=()=>(db.profile.name||'CV').trim().replace(/\s+/g,'_').replace(/[\\\/:*?"<>|]/g,'')+'_CV.pdf';
 let pe={exp:null,edu:null,certs:null},cvMode=false;
-function normProf(){const P=db.profile??={};PK.forEach(k=>P[k]=String(P[k]??''));['exp','edu','certs'].forEach(k=>{P[k]=Array.isArray(P[k])?P[k]:[];P[k].forEach(x=>x.id=sid(x.id)||uid())});if(P.img)P.img=sid(P.img)}
+function normProf(){const P=db.profile??={};PK.forEach(k=>P[k]=String(P[k]??''));['exp','edu','certs'].forEach(k=>{P[k]=Array.isArray(P[k])?P[k]:[];P[k].forEach(x=>x.id=sid(x.id)||uid())});if(P.img)P.img=sid(P.img);db.emsal=Array.isArray(db.emsal)?db.emsal:[];db.emsal.forEach(x=>x.id=sid(x.id)||uid());db.events=Array.isArray(db.events)?db.events:[];db.events.forEach(x=>x.id=sid(x.id)||uid())}
 function readProf(){if(!$('pf_name'))return;PK.forEach(k=>db.profile[k]=$('pf_'+k).value.trim())}
 function pcard(k){const S=PF[k],L=[...db.profile[k]].sort(srtP),E=L.find(x=>x.id==pe[k]);
 return `<div class="card"><h2>${S.t}</h2>${S.f.map(([n,l,t])=>`<label>${l}</label>`+(t=='area'?`<textarea id="pf_${k}_${n}" rows="2">${esc(E?E[n]:'')}</textarea>`:`<input id="pf_${k}_${n}" type="${t||'text'}" autocomplete="off" value="${esc(E?E[n]:'')}">`)).join('')}<button class="b g" onclick="pSave('${k}')">${E?'Güncelle':'Ekle'}</button>${E?`<button class="b" onclick="pe.${k}=null;readProf();prof()">Vazgeç</button>`:''}${L.map(x=>`<div style="border:1px solid var(--bd);border-radius:8px;padding:10px;margin-top:8px"><b>${esc(x.role)}</b> – ${esc(x.org)}<br><small>${esc(per(k,x))}</small>${x.desc?`<p style="white-space:pre-wrap;font-size:.85rem">${esc(x.desc)}</p>`:''}<div style="margin-top:6px"><button class="b sm" onclick="pEdit('${k}','${x.id}')">✎ Düzenle</button> <button class="b sm dg" onclick="pDel('${k}','${x.id}')">Sil</button></div></div>`).join('')}</div>`}
@@ -256,16 +354,81 @@ async function cvShare(){try{const b=await cvBlob(),f=new File([b],cvName(),{typ
 
 /* Yönetim paneli (sol üst ☰): yalnızca 3 seçenek, her biri ana ekranda kendi sayfasını açar */
 function panelHtml(){const lb=+localStorage.getItem('isg_bak')||0,age=(Date.now()-lb)/864e5;
-return `<button class="b" style="text-align:left;padding:14px;margin-bottom:10px" onclick="closePanel();prof()">👤 Profilim</button><button class="b" style="text-align:left;padding:14px;margin-bottom:10px" onclick="closePanel();bak()">💾 Yedekleme${age>14?' <span style="color:#fbbf24">●</span>':''}</button><button class="b" style="text-align:left;padding:14px;margin-bottom:10px" onclick="closePanel();acct()">🔐 Hesap</button>`}
+return `<button class="b" style="text-align:left;padding:14px;margin-bottom:10px" onclick="closePanel();home()">🏠 Ana sayfa</button><button class="b" style="text-align:left;padding:14px;margin-bottom:10px" onclick="closePanel();prof()">👤 Profilim</button><button class="b" style="text-align:left;padding:14px;margin-bottom:10px" onclick="closePanel();law()">📖 İSG Kanunu</button><button class="b" style="text-align:left;padding:14px;margin-bottom:10px" onclick="closePanel();emsal()">⚖️ Emsal Kararlar</button><button class="b" style="text-align:left;padding:14px;margin-bottom:10px" onclick="closePanel();cal()">📅 Takvim</button><button class="b" style="text-align:left;padding:14px;margin-bottom:10px" onclick="closePanel();bak()">💾 Yedekleme${age>14?' <span style="color:#fbbf24">●</span>':''}</button><button class="b" style="text-align:left;padding:14px;margin-bottom:10px" onclick="closePanel();acct()">🔐 Hesap</button><button class="b dg" style="text-align:left;padding:14px;margin-bottom:10px" onclick="closePanel();logout()">🚪 Çıkış yap</button>`}
 function bak(){cid=pid=null;setBar(1);const lb=+localStorage.getItem('isg_bak')||0,age=(Date.now()-lb)/864e5;
 $('app').innerHTML=`<header><h1>💾 Yedekleme</h1><button class="b sm" onclick="home()">Ana sayfa</button></header>${age>14?`<div class="card warn">⚠ ${lb?Math.floor(age)+' gündür':'Henüz'} yedek alınmadı. Veriler yalnızca bu cihazda saklanıyor.</div>`:''}
-<div class="card"><h2>Yedek al / geri yükle</h2><button class="b" onclick="backup()">Yedeği indir (.json)</button><input type="file" id="rf" accept=".json"><button class="b" onclick="restore()">Yedekten geri yükle</button></div>`}
+<div class="card"><h2>Yedek al / geri yükle</h2><button class="b" onclick="$('bo').style.display=$('bo').style.display=='block'?'none':'block'">⬇ Yedeği indir</button><div id="bo" style="display:none;margin-bottom:8px"><button class="b v" onclick="expXls()">📊 Excel (.xlsx)</button><button class="b v" onclick="expPdf()">📄 PDF</button><button class="b v" onclick="backup()">💾 .json (yeni cihaz için)</button><small>Excel ve PDF okunabilir raporlardır, geri yüklenemez. Başka cihaza taşımak için .json seçin.</small></div><input type="file" id="rf" accept=".json"><button class="b" onclick="restore()">Yedekten geri yükle</button></div>`}
 function acct(){cid=pid=null;$('app').innerHTML=`<header><h1>🔐 Hesap</h1><button class="b sm" onclick="home()">Ana sayfa</button></header>
-<div class="card"><h2>Şifre ve oturum</h2><form autocomplete="on" onsubmit="event.preventDefault();chpw()"><input name="username" type="text" value="${esc((A()||{}).ident)}" autocomplete="username" readonly><input id="op" name="password" type="password" placeholder="Mevcut şifre" autocomplete="current-password"><input id="np" name="new-password" type="password" placeholder="Yeni şifre (en az 8 karakter)" autocomplete="new-password"><button type="submit" class="b">Şifreyi değiştir</button></form><button type="button" class="b dg" onclick="logout()">Çıkış yap</button></div>`}
+<div class="card"><h2>Şifre ve oturum</h2><form autocomplete="on" onsubmit="event.preventDefault();chpw()"><input name="username" type="text" value="${esc((A()||{}).ident)}" autocomplete="username" readonly><input id="op" name="password" type="password" placeholder="Mevcut şifre" autocomplete="current-password"><input id="np" name="new-password" type="password" placeholder="Yeni şifre (en az 8 karakter)" autocomplete="new-password"><button type="submit" class="b">Şifreyi değiştir</button></form><button type="button" class="b dg" onclick="logout()">Çıkış yap</button></div><div class="card"><label style="display:flex;align-items:center;gap:8px;font-size:.95rem;margin:0"><input type="checkbox" ${localStorage.getItem('isg_keep')?'checked':''} onchange="keep(this.checked)"> Oturumu açık tut (giriş şifresi sorulmaz)</label></div><div class="card"><button class="b" onclick="legal()">📄 Hukuki metinleri görüntüle</button></div>`}
 function setBar(v){$('bar').style.display=v?'flex':'none';document.body.classList.toggle('nb',!v);$('bd').style.display=(Date.now()-(+localStorage.getItem('isg_bak')||0))/864e5>14?'inline':'none'}
 function openPanel(){$('mpc').innerHTML=panelHtml();$('mp').style.display='block'}
 function closePanel(){$('mp').style.display='none'}
 
+/* Hukuki metinler ve onaylar. Köşeli parantezli alanları kendi bilgilerinizle doldurun; yayından önce bir hukukçuya kontrol ettirin. */
+const CV=1,LG={unvan:'[ŞİRKET / GERÇEK KİŞİ ÜNVANI]',adres:'[ADRES]',mersis:'[MERSİS NO]',mail:'[E-POSTA]',tel:'[TELEFON]',kep:'[KEP ADRESİ]',urun:'İSG Saha Yönetim Asistanı',bedel:'[BEDEL]'},
+LT0={
+aydinlatma:{t:'Aydınlatma Metni',c:`Aydınlatma Metni'ni okudum ve anladım.`,b:`AYDINLATMA METNİ (6698 sayılı KVKK m.10)
+
+1. Veri sorumlusu: ${LG.unvan}, ${LG.adres}, MERSİS: ${LG.mersis}, e-posta: ${LG.mail}, KEP: ${LG.kep}.
+2. İşlenen veriler: E-posta veya telefon numaranız, şifrenizin geri döndürülemez özeti ve kullanım bilgileri. Ayrıca sizin uygulamaya girdiğiniz çalışan ve firma kayıtları (ad soyad, TC kimlik no, görev, eğitim, sağlık muayenesi, fotoğraf, iş kazası ve uygunsuzluk kayıtları, kayıt dışı çalışan tespitleri) ile CV bilgileriniz.
+3. Saklama: Uygulama verileri yalnızca kullandığınız cihazın tarayıcı deposunda tutulur; otomatik olarak tarafımıza veya bir sunucuya gönderilmez. Yedek, Excel/PDF raporu veya paylaşım yaptığınızda dosya sizin kontrolünüzde oluşur ve gönderilir.
+4. Amaçlar: Hesap oluşturma ve doğrulama, İSG kayıtlarının yönetimi, yedekleme ve raporlama, hukuki yükümlülüklerin yerine getirilmesi.
+5. Hukuki sebepler: Sözleşmenin kurulması ve ifası, hukuki yükümlülük, meşru menfaat; sağlık gibi özel nitelikli veriler için ilgili mevzuat ve gerektiğinde açık rıza (KVKK m.5 ve m.6).
+6. Üçüncü taraf hizmetler: Arayüz kütüphaneleri CDN'lerden (jsDelivr, cdnjs) yüklenir; bu sağlayıcılar IP adresinizi görebilir. "Sesle yaz" kullanırsanız ses kaydınız tarayıcınızın konuşma tanıma hizmetine (ör. Google, Apple) gönderilir. Mevzuat ve Yargıtay bağlantıları sizi üçüncü taraf sitelere yönlendirir.
+7. Aktarım: Yasal zorunluluk dışında verileriniz üçüncü kişilere aktarılmaz. Yurt dışına aktarım yalnızca 6. maddedeki araçlar nedeniyle söz konusu olabilir.
+8. Çalışan verileri: Çalışanlara ait veri girdiğinizde bu veriler bakımından veri sorumlusu ya da veri işleyen siz veya işvereniniz olabilirsiniz; ilgili kişileri aydınlatma, VERBİS ve güvenlik yükümlülükleri size aittir.
+9. Haklarınız (KVKK m.11): Verilerinizin işlenip işlenmediğini öğrenme, bilgi isteme, düzeltme, silme, itiraz etme ve zararın giderilmesini talep etme haklarına sahipsiniz. Başvuru: ${LG.mail} veya ${LG.kep}.`},
+riza:{t:'Açık Rıza Beyanı',c:`Açık Rıza Beyanı'nı okudum ve onaylıyorum.`,b:`AÇIK RIZA BEYANI
+
+Aydınlatma Metni'ni okudum ve anladım. Aşağıdaki konularda, özgür iradeyle ve yalnızca belirtilen amaçlarla açık rızam vardır:
+a) Uygulamaya kendi girdiğim özel nitelikli kişisel verilerin (sağlık muayene kayıtları, fotoğraf gibi) ve kayıt dışı çalışan tespit kayıtlarının bu cihazda işlenmesi ve saklanması;
+b) Kendi oluşturduğum yedek, rapor veya CV dosyalarını paylaştığımda paylaşım aracının (e-posta, mesajlaşma vb.) sağlayıcısına aktarılması;
+c) "Sesle yaz" özelliğini kullandığımda ses verimin tarayıcı sağlayıcısının konuşma tanıma hizmetine, yurt dışı dâhil aktarılması;
+d) Uygulamaya girdiğim çalışanlara ait verilerin işlenmesi; ilgili kişileri aydınlatma ve gerekli izinleri alma yükümlülüğünün bana ait olduğunu kabul ediyorum.
+Rızamı istediğim zaman ${LG.mail} adresine başvurarak veya uygulamadaki verilerimi silerek geri alabileceğimi, geri almanın geçmişe etkili olmayacağını biliyorum.`},
+kullanici:{t:'Kullanıcı Sözleşmesi',c:`Kullanıcı Sözleşmesi'ni okudum, kabul ediyorum.`,b:`KULLANICI SÖZLEŞMESİ
+
+1. Taraflar: ${LG.unvan} ("Sağlayıcı") ile uygulamayı kullanan kişi ("Kullanıcı").
+2. Konu: "${LG.urun}" uygulamasının İSG kayıtlarının tutulması, raporlanması ve yedeklenmesi amacıyla kullanım koşulları.
+3. Hesap: Kullanıcı doğru bilgi verir; şifresinin güvenliğinden ve cihazına erişimden kendisi sorumludur. Veriler sunucuda tutulmadığı için unutulan şifre kurtarılamaz; "şifremi unuttum" işlemi cihazdaki verileri siler.
+4. Veri ve yedek: Veriler Kullanıcı'nın cihazında saklanır. Düzenli yedek almak Kullanıcı'nın sorumluluğundadır; tarayıcı verisinin silinmesi, cihaz arızası veya kaybı gibi durumlardaki veri kaybından Sağlayıcı sorumlu tutulamaz.
+5. Kullanım kuralları: Uygulama hukuka aykırı amaçlarla veya başkalarının haklarını ihlal edecek biçimde kullanılamaz. Kullanıcı, girdiği kişisel verilerin hukuka uygunluğundan ve ilgili kişileri aydınlatmaktan sorumludur.
+6. Mevzuat ve karar içerikleri: Mevzuat listeleri, bağlantılar ve emsal karar notları bilgi amaçlıdır; hukuki veya mesleki danışmanlık değildir. Güncelliği resmî kaynaklardan doğrulanmalıdır; İSG kararları ve yasal yükümlülükler Kullanıcı'nın sorumluluğundadır.
+7. Fikri haklar: Uygulama Sağlayıcı'ya aittir; Kullanıcı'ya devredilemez, münhasır olmayan bir kullanım hakkı tanınır.
+8. Sorumluluk: Uygulama "olduğu gibi" sunulur; kesintisiz veya hatasız çalışacağı garanti edilmez. Sorumluluk, kanunun izin verdiği ölçüde sınırlıdır.
+9. Değişiklik ve fesih: Sağlayıcı sözleşmeyi güncelleyebilir; önemli değişikliklerde yeniden onay istenir. Kullanıcı dilediği zaman kullanımı bırakabilir.
+10. Uyuşmazlık: Türk hukuku uygulanır; tüketici işlemlerinde Tüketici Hakem Heyetleri ve Tüketici Mahkemeleri yetkilidir.`},
+mesafeli:{t:'Mesafeli Satış Sözleşmesi',c:`Mesafeli Satış Sözleşmesi'ni okudum, kabul ediyorum.`,b:`MESAFELİ SATIŞ SÖZLEŞMESİ (6502 sayılı Kanun ve Mesafeli Sözleşmeler Yönetmeliği uyarınca)
+
+1. Satıcı: ${LG.unvan}, ${LG.adres}, MERSİS: ${LG.mersis}, tel: ${LG.tel}, e-posta: ${LG.mail}.
+2. Alıcı: Uygulamaya kayıt olan ve ücretli hizmeti satın alan kişi.
+3. Konu: Alıcı'nın elektronik ortamda satın aldığı "${LG.urun}" uygulamasının kullanım hakkı veya abonelik hizmetinin nitelikleri, bedeli, ifası ile tarafların hak ve yükümlülükleri.
+4. Bedel ve ödeme: Hizmet bedeli ${LG.bedel} (vergiler dâhil) olup sipariş sırasında ve Ön Bilgilendirme Formu'nda belirtilir. Ödeme seçilen yöntemle yapılır.
+5. İfa: Hizmet, ödemenin onaylanmasından sonra elektronik ortamda hemen ifa edilir ve erişim sağlanır.
+6. Cayma hakkı: Alıcı, 14 gün içinde gerekçe göstermeden cayabilir. Ancak elektronik ortamda anında ifa edilen hizmetlerde ve tüketicinin onayıyla cayma süresi bitmeden ifasına başlanan hizmetlerde cayma hakkı kullanılamaz (Yönetmelik m.15). Alıcı, ifanın cayma süresi içinde başlamasını onayladığını kabul eder. Ücretsiz kullanımda bu madde uygulanmaz.
+7. Cayma bildirimi: ${LG.mail} veya ${LG.kep} adresine yazılı olarak yapılır.
+8. Uyuşmazlık: Parasal sınırlar dâhilinde Tüketici Hakem Heyetleri ve Tüketici Mahkemeleri yetkilidir.
+9. Yürürlük: Sözleşme, Alıcı'nın elektronik ortamda onaylamasıyla yürürlüğe girer.`},
+onbilgi:{t:'Ön Bilgilendirme Formu',c:`Ön Bilgilendirme Formu'nu okudum ve elektronik ortamda onayladım.`,b:`ÖN BİLGİLENDİRME FORMU
+
+1. Satıcı: ${LG.unvan}; ${LG.adres}; MERSİS: ${LG.mersis}; tel: ${LG.tel}; e-posta: ${LG.mail}; KEP: ${LG.kep}.
+2. Hizmetin nitelikleri: "${LG.urun}"; işyerlerinde İSG kayıtlarının (personel, eğitim, sağlık, KKD, denetim/olay, döküman) tutulması, raporlanması ve yedeklenmesine yönelik yazılım hizmeti. Veriler kullanıcının cihazında saklanır.
+3. Toplam bedel: ${LG.bedel} (tüm vergiler dâhil). Elektronik hizmet olduğundan teslimat bedeli yoktur.
+4. Ödeme ve ifa: Ödeme yöntemi sipariş adımında belirtilir; hizmet ödeme onayından sonra elektronik ortamda hemen ifa edilir.
+5. Cayma hakkı: Alıcı 14 gün içinde gerekçe göstermeden cayabilir; ancak anında ifa edilen elektronik hizmetlerde ve onayıyla cayma süresi bitmeden ifasına başlanan hizmetlerde cayma hakkı kullanılamaz. Bildirim ${LG.mail} adresine yapılır.
+6. Şikâyet ve başvuru: Satıcıya, ayrıca parasal sınırlar dâhilinde Tüketici Hakem Heyetleri veya Tüketici Mahkemeleri'ne başvurulabilir.
+7. Onay: Alıcı, bu formu ve Mesafeli Satış Sözleşmesi'ni sözleşme kurulmadan önce okuyup elektronik ortamda onayladığını kabul eder.`}},
+LT={hukuk:{t:'Aydınlatma Metni, Açık Rıza Beyanı ve Kullanıcı Sözleşmesi',c:`Aydınlatma Metni, Açık Rıza Beyanı ve Kullanıcı Sözleşmesi'ni okudum, anladım ve kabul ediyorum.`,b:[LT0.aydinlatma,LT0.riza,LT0.kullanici].map(x=>x.b).join('\n\n────────────────────\n\n')},mesafeli:LT0.mesafeli,onbilgi:LT0.onbilgi},
+consentBlock=()=>`<div style="margin:6px 0 12px">${Object.entries(LT).map(([k,x])=>`<div style="border:1px solid var(--bd);border-radius:8px;padding:8px;margin-bottom:8px;background:#fff"><label style="display:flex;gap:8px;align-items:flex-start;font-size:.85rem;color:#1e293b;margin:0"><input type="checkbox" id="cs_${k}" style="margin-top:3px"><span><a href="#" style="color:var(--s);font-weight:700" onclick="showLT('${k}');return false">${x.t}</a>${esc(x.c.slice(x.t.length))}</span></label></div>`).join('')}</div>`,
+consentAll=()=>Object.keys(LT).every(k=>$('cs_'+k)&&$('cs_'+k).checked),
+saveConsent=()=>localStorage.setItem('isg_consent',JSON.stringify({v:CV,d:new Date().toISOString()})),
+consentOk=()=>{try{return JSON.parse(localStorage.getItem('isg_consent')).v==CV}catch(e){return false}};
+function showLT(k){$('ltt').textContent=LT[k].t;$('ltb').textContent=LT[k].b;$('ltm').style.display='block'}
+function consentUI(){setBar(0);$('app').innerHTML=`<header><h1>🏗️ İSG Saha Yönetim Asistanı</h1></header><div class="card"><h2>Hukuki metinler ve onaylar</h2><p style="font-size:.85rem;margin-bottom:8px">Devam etmek için aşağıdaki metinleri okuyup onaylayın.</p>${consentBlock()}<button class="b g" onclick="okConsent()">Onayla ve devam et</button></div>`}
+function okConsent(){if(!consentAll())return alert('Devam etmek için tüm metinleri onaylamanız gerekir.');saveConsent();gate()}
+function legal(){let d='';try{d=new Date(JSON.parse(localStorage.getItem('isg_consent')).d).toLocaleString('tr-TR')}catch(e){}
+shell('📄 Hukuki metinler',`<div class="card"><h2>Onayladığınız metinler</h2>${d?`<small>Onay tarihi: ${esc(d)}</small>`:''}${Object.values(LT).map(x=>`<details style="margin:8px 0"><summary style="cursor:pointer;font-weight:700">${x.t}</summary><div style="white-space:pre-wrap;font-size:.8rem;margin-top:6px">${esc(x.b)}</div></details>`).join('')}</div>`)}
+
 /* Başlangıç: eski localStorage verisi varsa taşınır (silinmez) */
-(async()=>{try{db=await get('kv','db');if(!db){db={companies:[]};const o=JSON.parse(localStorage.getItem('isg_multi_db')||'null');if(o&&o.companies){for(const c of o.companies){for(const a of c.accidents||[])if(a.img){const k=uid();await put('img',k,a.img);a.img=k}db.companies.push(c)}norm();await save()}}norm();navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){alert('Depolama açılamadı: '+e)}gate()})();
+(async()=>{try{db=await get('kv','db');if(!db){db={companies:[]};const o=JSON.parse(localStorage.getItem('isg_multi_db')||'null');if(o&&o.companies){for(const c of o.companies){for(const a of c.accidents||[])if(a.img){const k=uid();await put('img',k,a.img);a.img=k}db.companies.push(c)}norm();await save()}}norm();navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){alert('Depolama açılamadı: '+e)}gate();setInterval(chkAlarms,3e4);document.addEventListener('visibilitychange',chkAlarms)})();
 </script></body></html>
