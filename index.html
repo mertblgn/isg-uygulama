@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>İSG Saha Yönetim Asistanı - Final</title>
-    <!-- SheetJS (XLSX) Kütüphanesi -->
+    <!-- SheetJS (XLSX) ve JSZip Kütüphaneleri -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- html2pdf.js Kütüphanesi -->
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <!-- html2pdf.js Kütüphanesi (PDF İndirme için) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
@@ -58,6 +59,7 @@
         
         .report-img { width: 80px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); cursor: pointer; }
         
+        /* Galeri Paneli */
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
         .gallery-item { background: white; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: center; padding: 5px; position: relative; }
         .gallery-item input[type="checkbox"] { position: absolute; top: 8px; left: 8px; width: 18px; height: 18px; }
@@ -69,6 +71,7 @@
         .stat-card h4 { font-size: 0.8rem; color: #64748b; }
         .stat-card p { font-size: 1.2rem; font-weight: bold; color: var(--primary); margin-top: 5px; }
 
+        /* Modal Önizleme */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); padding: 20px; }
         .modal-content { background-color: #fff; margin: auto; padding: 20px; border-radius: 12px; width: 100%; max-width: 700px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .close-modal { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
@@ -79,6 +82,7 @@
 
 <div class="container" id="app"></div>
 
+<!-- PDF Önizleme Modalı -->
 <div id="pdfModal" class="modal">
     <div class="modal-content">
         <span class="close-modal" onclick="closePdfModal()">&times;</span>
@@ -89,32 +93,16 @@
 </div>
 
 <script>
-    let db = { companies: [] };
-    try {
-        let saved = localStorage.getItem('isg_multi_db');
-        if (saved) {
-            db = JSON.parse(saved);
-            if (!db.companies) db.companies = [];
-        }
-    } catch (e) {
-        db = { companies: [] };
-    }
-
+    let db = JSON.parse(localStorage.getItem('isg_multi_db')) || { companies: [] };
     let currentCompanyId = null;
     let selectedPersonnelIndex = null;
     let personnelSortMode = 'alpha_asc';
-    let observationFilterMode = 'all';
 
     function saveDB() {
-        try {
-            localStorage.setItem('isg_multi_db', JSON.stringify(db));
-        } catch (e) {
-            alert('Kayıt alanı dolu veya hata oluştu!');
-        }
+        localStorage.setItem('isg_multi_db', JSON.stringify(db));
     }
 
     function getCurrentCompany() {
-        if (!currentCompanyId) return null;
         return db.companies.find(c => c.id === currentCompanyId);
     }
 
@@ -136,7 +124,7 @@
                 <div class="company-grid">
         `;
 
-        if (!db.companies || db.companies.length === 0) {
+        if (db.companies.length === 0) {
             html += `<p style="grid-column: 1/-1; text-align: center; color: #64748b; padding: 20px;">Henüz eklenmiş firma yok.</p>`;
         } else {
             db.companies.forEach(comp => {
@@ -157,14 +145,14 @@
     }
 
     function addCompany() {
-        let nameField = document.getElementById('compName');
-        let descField = document.getElementById('compDesc');
-        if(!nameField || !nameField.value.trim()) { alert('Lütfen firma adı girin!'); return; }
+        let name = document.getElementById('compName').value.trim();
+        let desc = document.getElementById('compDesc').value.trim();
+        if(!name) { alert('Lütfen firma adı girin!'); return; }
         
         db.companies.push({
             id: 'comp_' + Date.now(),
-            name: nameField.value.trim(),
-            desc: descField ? descField.value.trim() : '',
+            name: name,
+            desc: desc,
             personnel: [],
             accidents: []
         });
@@ -214,29 +202,15 @@
 
     function renderTabContent() {
         let comp = getCurrentCompany();
-        if (!comp) return;
         let content = '';
 
         if (currentTab === 'personnel') {
-            if (!comp.personnel) comp.personnel = [];
-            
             if (selectedPersonnelIndex !== null && comp.personnel[selectedPersonnelIndex]) {
+                // PERSONEL DETAY VE SİCİL EĞİTİM SAĞLIK ZİMMET PANELI
                 let p = comp.personnel[selectedPersonnelIndex];
                 if(!p.trainings) p.trainings = [];
                 if(!p.health) p.health = [];
                 if(!p.ppe) p.ppe = [];
-                if(!p.observations) p.observations = [];
-
-                let filteredObs = [...p.observations];
-                if (observationFilterMode === 'uygunsuzluk') {
-                    filteredObs = filteredObs.filter(o => o.type === 'Uygunsuz Davranış');
-                } else if (observationFilterMode === 'uygunluk') {
-                    filteredObs = filteredObs.filter(o => o.type === 'Uyum / Başarı');
-                } else if (observationFilterMode === 'date_new') {
-                    filteredObs.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-                } else if (observationFilterMode === 'date_old') {
-                    filteredObs.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
-                }
 
                 content = `
                     <button class="btn-back" style="margin-bottom:10px;" onclick="selectedPersonnelIndex=null; renderTabContent();">← Personel Listesine Dön</button>
@@ -250,52 +224,9 @@
                         </div>
                     </div>
 
-                    <div class="card" style="border: 2px dashed var(--secondary);">
-                        <h2>📝 İSG Gözlem Formu (Davranış & Başarı)</h2>
-                        <select id="obsType">
-                            <option value="Uygunsuz Davranış">Uygunsuz Davranış / Risk</option>
-                            <option value="Uyum / Başarı">Uyum / Örnek Başarı</option>
-                        </select>
-                        <input type="text" id="obsLocation" placeholder="Konum / Nerede (Örn: 2. Kat İskele)">
-                        <textarea id="obsDesc" placeholder="Ne zaman, ne uygunsuzluk veya uyum yapmış? Detay yazın..." rows="3"></textarea>
-                        <input type="date" id="obsDate">
-                        <label style="font-size:0.85rem; font-weight:bold; color:#64748b;">Kanıt Görseli (Fotoğraf):</label>
-                        <input type="file" id="obsImgFile" accept="image/*" style="margin-top:5px; margin-bottom:10px;">
-                        <button class="btn-primary" onclick="addObservation()">Gözlem Kaydı Ekle</button>
-                    </div>
-
-                    <div class="card">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                            <h2>Gözlem Geçmişi (${p.observations.length})</h2>
-                            <select id="obsFilter" onchange="changeObservationFilter(this.value)" style="width:160px; margin:0; padding:5px;">
-                                <option value="all" ${observationFilterMode==='all'?'selected':''}>Tümü</option>
-                                <option value="uygunsuzluk" ${observationFilterMode==='uygunsuzluk'?'selected':''}>Uygunsuzluklar</option>
-                                <option value="uygunluk" ${observationFilterMode==='uygunluk'?'selected':''}>Uyum / Başarı</option>
-                                <option value="date_new" ${observationFilterMode==='date_new'?'selected':''}>Yeniden Eskiye</option>
-                                <option value="date_old" ${observationFilterMode==='date_old'?'selected':''}>Eskiden Yeniye</option>
-                            </select>
-                        </div>
-                        <div class="table-responsive">
-                            <table>
-                                <tr><th>Görsel</th><th>Tür</th><th>Konum / Tarih / Açıklama</th><th>İşlem</th></tr>
-                                ${filteredObs.length === 0 ? '<tr><td colspan="4" style="text-align:center; color:#64748b;">Kayıt bulunamadı.</td></tr>' : filteredObs.map((o) => {
-                                    let realIdx = p.observations.indexOf(o);
-                                    return `
-                                        <tr>
-                                            <td>${o.img ? `<img src="${o.img}" class="report-img" onclick="window.open('${o.img}')">` : 'Yok'}</td>
-                                            <td><span class="badge ${o.type==='Uygunsuz Davranış'?'badge-red':'badge-green'}">${o.type}</span></td>
-                                            <td><strong>Yer:</strong> ${o.location || '-'}<br><strong>Tarih:</strong> ${o.date \vert{}\vert{} '-'}<br>${o.desc}</td>
-                                            <td><button class="btn-danger" onclick="deleteObservation(${realIdx})">Sil</button></td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </table>
-                        </div>
-                    </div>
-
                     <div class="card">
                         <h2>Eğitim Ekle</h2>
-                        <input type="text" id="ptName" placeholder="Eğitim Konusu">
+                        <input type="text" id="ptName" placeholder="Eğitim Konusu (Örn: Temel İSG)">
                         <input type="date" id="ptDate">
                         <button class="btn-primary" onclick="addPersonnelSub('trainings')">Eğitim Kaydet</button>
                         <h4 style="margin-top:10px; font-size:0.9rem; color:var(--primary);">Verilen Eğitimler (${p.trainings.length})</h4>
@@ -304,7 +235,7 @@
 
                     <div class="card">
                         <h2>Sağlık / Muayene Ekle</h2>
-                        <input type="text" id="phType" placeholder="Muayene Türü">
+                        <input type="text" id="phType" placeholder="Muayene Türü (Örn: İşe Giriş Muayenesi)">
                         <input type="date" id="phDate">
                         <button class="btn-primary" onclick="addPersonnelSub('health')">Sağlık Kaydet</button>
                         <h4 style="margin-top:10px; font-size:0.9rem; color:var(--primary);">Sağlık Geçmişi (${p.health.length})</h4>
@@ -313,7 +244,7 @@
 
                     <div class="card">
                         <h2>KKD Zimmet Ekle</h2>
-                        <input type="text" id="peItem" placeholder="Malzeme (Baret, Ayakkabı vb.)">
+                        <input type="text" id="peItem" placeholder="Malzeme (Örn: Baret, Çelik Burunlu Ayakkabı)">
                         <input type="date" id="peDate">
                         <button class="btn-primary" onclick="addPersonnelSub('ppe')">Zimmetle</button>
                         <h4 style="margin-top:10px; font-size:0.9rem; color:var(--primary);">Zimmetli Ekipmanlar (${p.ppe.length})</h4>
@@ -321,11 +252,12 @@
                     </div>
                 `;
             } else {
+                // PERSONEL LİSTESİ VE FİLTRELEME
                 let sortedPersonnel = [...comp.personnel];
                 if (personnelSortMode === 'alpha_asc') {
-                    sortedPersonnel.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr'));
+                    sortedPersonnel.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
                 } else if (personnelSortMode === 'alpha_desc') {
-                    sortedPersonnel.sort((a, b) => (b.name || '').localeCompare(a.name || '', 'tr'));
+                    sortedPersonnel.sort((a, b) => b.name.localeCompare(a.name, 'tr'));
                 } else if (personnelSortMode === 'date_new') {
                     sortedPersonnel.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
                 } else if (personnelSortMode === 'date_old') {
@@ -342,8 +274,10 @@
                         <button class="btn-primary" onclick="addPersonnel()">Personeli Kaydet</button>
                     </div>
                     <div class="card" style="border: 2px dashed var(--secondary);">
-                        <h2>📁 Personel Dışa Aktar</h2>
+                        <h2>📁 Excel / CSV Personel İşlemleri</h2>
                         <button class="btn-excel" onclick="exportPersonnelExcel()">Personeli Excel'e Aktar (.xlsx)</button>
+                        <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="margin-top:10px; margin-bottom:5px;">
+                        <button class="btn-primary" style="background:#2563eb;" onclick="importPersonnelExcel()">Excel'den Personel Yükle</button>
                     </div>
                     <div class="card">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -362,13 +296,13 @@
                                     <th style="width:30px;"><input type="checkbox" id="selectAll-personnel" onclick="toggleSelectAll('personnel')"></th>
                                     <th>Ad Soyad</th><th>TC</th><th>Görev</th><th>İşlem</th>
                                 </tr>
-                                ${sortedPersonnel.length === 0 ? '<tr><td colspan="5" style="text-align:center; color:#64748b;">Henüz personel eklenmemiş.</td></tr>' : sortedPersonnel.map((p) => {
+                                ${sortedPersonnel.map((p, originalIdx) => {
                                     let realIdx = comp.personnel.indexOf(p);
                                     return `
                                         <tr>
                                             <td><input type="checkbox" class="select-personnel" value="${realIdx}"></td>
                                             <td style="cursor:pointer; color:var(--secondary); font-weight:bold;" onclick="selectPersonnelDetail(${realIdx})">${p.name}</td>
-                                            <td>${p.tc \vert{}\vert{} '-'}</td><td>${p.job || '-'}</td>
+                                            <td>${p.tc}</td><td>${p.job}</td>
                                             <td><button class="btn-danger" onclick="deleteItem('personnel', ${realIdx})">Sil</button></td>
                                         </tr>
                                     `;
@@ -379,7 +313,6 @@
                 `;
             }
         } else if (currentTab === 'accidents') {
-            if(!comp.accidents) comp.accidents = [];
             content = `
                 <div class="card">
                     <h2>Denetim / Kaza / Uygunsuzluk Ekle</h2>
@@ -389,6 +322,13 @@
                     <label style="font-size:0.85rem; font-weight:bold; color:#64748b;">Fotoğraf Yükle:</label>
                     <input type="file" id="accImgFile" accept="image/*" style="margin-top:5px;">
                     <button class="btn-primary" onclick="addAccidentWithImage()">Kayıt Ekle</button>
+                </div>
+                
+                <div class="card" style="border: 2px dashed var(--secondary);">
+                    <h2>📁 Excel Raporu İçeri Aktar (Görseller Dahil)</h2>
+                    <p style="font-size:0.85rem; color:#64748b; margin-bottom:10px;">İçinde fotoğraflar bulunan Excel denetim raporunuzu seçin:</p>
+                    <input type="file" id="excelReportFile" accept=".xlsx, .xls">
+                    <button class="btn-primary" style="background:#2563eb; margin-top:5px;" onclick="importExcelWithImages()">Excel Raporunu ve Görselleri Yükle</button>
                 </div>
 
                 <div class="card">
@@ -404,9 +344,9 @@
                                 <tr>
                                     <td><input type="checkbox" class="select-accidents" value="${i}"></td>
                                     <td>${a.img ? `<img src="${a.img}" class="report-img" onclick="window.open('${a.img}')">` : 'Yok'}</td>
-                                    <td><span class="badge ${a.type && a.type.includes('Kazası')?'badge-red':'badge-green'}">${a.type || ''}</span></td>
-                                    <td>${a.desc || ''}</td>
-                                    <td>${a.date || ''}</td>
+                                    <td><span class="badge ${a.type.includes('Kazası')?'badge-red':'badge-green'}">${a.type}</span></td>
+                                    <td>${a.desc}</td>
+                                    <td>${a.date}</td>
                                     <td><button class="btn-danger" onclick="deleteItem('accidents', ${i})">Sil</button></td>
                                 </tr>
                             `).join('')}
@@ -415,14 +355,15 @@
                 </div>
             `;
         } else if (currentTab === 'gallery') {
-            if(!comp.accidents) comp.accidents = [];
             let imgList = comp.accidents.filter(a => a.img && a.img.trim() !== '');
             content = `
                 <div class="card">
                     <h2>📷 Hızlı Saha Görseli Ekle</h2>
-                    <input type="text" id="galleryDesc" placeholder="Görsel Açıklaması / Konum">
+                    <input type="text" id="galleryDesc" placeholder="Görsel Açıklaması / Konum (Örn: İskele kontrolü)">
+                    
                     <input type="file" id="galleryFile" accept="image/*" style="display:none;" onchange="handleGalleryFile(this)">
                     <button class="btn-primary" onclick="document.getElementById('galleryFile').click()">📁 Galeriden Fotoğraf Seç</button>
+                    
                     <input type="file" id="galleryCamera" accept="image/*" capture="environment" style="display:none;" onchange="handleGalleryFile(this)">
                     <button class="btn-camera" onclick="document.getElementById('galleryCamera').click()">📸 Kamera ile Anlık Çek</button>
                 </div>
@@ -440,7 +381,7 @@
                                     <div class="gallery-item">
                                         <input type="checkbox" class="select-gallery" value="${originalIndex}">
                                         <img src="${item.img}" onclick="window.open('${item.img}')" title="Büyütmek için tıklayın">
-                                        <p>${item.date || ''} - ${item.desc || 'Açıklama yok'}</p>
+                                        <p>${item.date} - ${item.desc || 'Açıklama yok'}</p>
                                     </div>
                                 `;
                             }).join('')}
@@ -453,55 +394,24 @@
                 <div class="card">
                     <h2>📊 Şantiye Genel Özet Raporu</h2>
                     <div class="stats-box">
-                        <div class="stat-card"><h4>Toplam Personel</h4><p>${comp.personnel ? comp.personnel.length : 0}</p></div>
-                        <div class="stat-card"><h4>Denetim / Olay</h4><p>${comp.accidents ? comp.accidents.length : 0}</p></div>
+                        <div class="stat-card"><h4>Toplam Personel</h4><p>${comp.personnel.length}</p></div>
+                        <div class="stat-card"><h4>Denetim / Olay</h4><p>${comp.accidents.length}</p></div>
                     </div>
                 </div>
             `;
         }
 
-        let tabContainer = document.getElementById('tabContent');
-        if (tabContainer) tabContainer.innerHTML = content;
+        document.getElementById('tabContent').innerHTML = content;
     }
 
-    function changeSortMode(mode) { personnelSortMode = mode; renderTabContent(); }
-    function changeObservationFilter(mode) { observationFilterMode = mode; renderTabContent(); }
-    function selectPersonnelDetail(index) { selectedPersonnelIndex = index; observationFilterMode = 'all'; renderTabContent(); }
-
-    function addObservation() {
-        let comp = getCurrentCompany();
-        let p = comp.personnel[selectedPersonnelIndex];
-        let type = document.getElementById('obsType').value;
-        let location = document.getElementById('obsLocation').value.trim();
-        let desc = document.getElementById('obsDesc').value.trim();
-        let date = document.getElementById('obsDate').value;
-        let fileInput = document.getElementById('obsImgFile');
-
-        if(!desc) { alert('Lütfen gözlem açıklaması girin!'); return; }
-
-        if (fileInput && fileInput.files && fileInput.files[0]) {
-            let reader = new FileReader();
-            reader.onload = function(e) {
-                p.observations.push({ type, location, desc, date, img: e.target.result });
-                saveDB();
-                renderTabContent();
-            };
-            reader.readAsDataURL(fileInput.files[0]);
-        } else {
-            p.observations.push({ type, location, desc, date, img: '' });
-            saveDB();
-            renderTabContent();
-        }
+    function changeSortMode(mode) {
+        personnelSortMode = mode;
+        renderTabContent();
     }
 
-    function deleteObservation(idx) {
-        let comp = getCurrentCompany();
-        let p = comp.personnel[selectedPersonnelIndex];
-        if(confirm('Bu gözlem kaydını silmek istediğinize emin misiniz?')) {
-            p.observations.splice(idx, 1);
-            saveDB();
-            renderTabContent();
-        }
+    function selectPersonnelDetail(index) {
+        selectedPersonnelIndex = index;
+        renderTabContent();
     }
 
     function addPersonnelSub(type) {
@@ -535,6 +445,7 @@
         renderTabContent();
     }
 
+    // PDF ÖNİZLEME VE İNDİRME FONKSİYONLARI
     function generatePdfHtmlString() {
         let comp = getCurrentCompany();
         let p = comp.personnel[selectedPersonnelIndex];
@@ -551,17 +462,6 @@
                     <p><strong>İşe Giriş Tarihi:</strong> ${p.date || '-'}</p>
                 </div>
                 <hr style="border:0; border-top:1px solid #ccc; margin: 15px 0;">
-                
-                <h3 style="font-size: 1rem; color: #1e3a8a; margin-bottom: 5px;">İSG Gözlem Formu / Davranış Kayıtları</h3>
-                <div style="font-size: 0.85rem; margin-bottom: 15px;">
-                    ${p.observations && p.observations.length > 0 ? p.observations.map(o => `
-                        <div style="border: 1px solid #ddd; padding: 8px; margin-bottom: 6px; border-radius: 4px;">
-                            <p><strong>Tür:</strong> ${o.type} | <strong>Konum:</strong> ${o.location \vert{}\vert{} '-'} \vert{} <strong>Tarih:</strong>${o.date || '-'}</p>
-                            <p><strong>Açıklama:</strong> ${o.desc}</p>${o.img ? `<img src="${o.img}" style="width:100px; height:70px; object-fit:cover; margin-top:5px; border-radius:4px;">` : ''}
-                        </div>
-                    `).join('') : '<p>Kayıt yok</p>'}
-                </div>
-
                 <h3 style="font-size: 1rem; color: #1e3a8a; margin-bottom: 5px;">Verilen Eğitimler</h3>
                 <ul style="font-size: 0.85rem; padding-left: 20px; margin-bottom: 15px;">
                     ${p.trainings && p.trainings.length > 0 ? p.trainings.map(t => `<li>${t.date} -${t.name}</li>`).join('') : '<li>Kayıt yok</li>'}
@@ -579,37 +479,31 @@
     }
 
     function openPdfPreview() {
-        let container = document.getElementById('pdfPreviewContainer');
-        let modal = document.getElementById('pdfModal');
-        if (container) container.innerHTML = generatePdfHtmlString();
-        if (modal) modal.style.display = 'block';
+        document.getElementById('pdfPreviewContainer').innerHTML = generatePdfHtmlString();
+        document.getElementById('pdfModal').style.display = 'block';
     }
 
     function closePdfModal() {
-        let modal = document.getElementById('pdfModal');
-        if (modal) modal.style.display = 'none';
+        document.getElementById('pdfModal').style.display = 'none';
     }
 
     function downloadPdfFinal() {
-        let p = getCurrentCompany().personnel[selectedPersonnelIndex];
+        let comp = getCurrentCompany();
+        let p = comp.personnel[selectedPersonnelIndex];
         let element = document.createElement('div');
         element.innerHTML = generatePdfHtmlString();
         
         let opt = {
             margin:       10,
-            filename:     `${(p.name || 'personel').replace(/\s+/g, '_')}_isg_sicil.pdf`,
+            filename:     `${p.name.replace(/\s+/g, '_')}_isg_sicil.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2 },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        if (typeof html2pdf !== 'undefined') {
-            html2pdf().from(element).set(opt).save().then(() => {
-                closePdfModal();
-            });
-        } else {
-            alert('PDF kütüphanesi yüklenemedi. Lütfen internet bağlantınızı kontrol edin.');
-        }
+        html2pdf().from(element).set(opt).save().then(() => {
+            closePdfModal();
+        });
     }
 
     function handleGalleryFile(input) {
@@ -637,7 +531,7 @@
     function toggleSelectAll(listName) {
         let masterCheckbox = document.getElementById(`selectAll-${listName}`);
         let checkboxes = document.querySelectorAll(`.select-${listName}`);
-        checkboxes.forEach(cb => cb.checked = masterCheckbox ? masterCheckbox.checked : false);
+        checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
     }
 
     function bulkDelete(listName) {
@@ -666,6 +560,60 @@
         }
     }
 
+    async function importExcelWithImages() {
+        let fileInput = document.getElementById('excelReportFile');
+        if(fileInput.files.length === 0) { alert('Lütfen bir Excel dosyası seçin!'); return; }
+        
+        let file = fileInput.files[0];
+        let reader = new FileReader();
+
+        reader.onload = async function(e) {
+            try {
+                let data = new Uint8Array(e.target.result);
+                let workbook = XLSX.read(data, { type: 'array' });
+                let worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                let jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                let zip = new JSZip();
+                let zipContent = await zip.loadAsync(file);
+                let mediaFiles = Object.keys(zipContent.files).filter(filename => filename.startsWith('xl/media/'));
+                
+                let extractedImages = [];
+                for (let path of mediaFiles) {
+                    let imgData = await zipContent.files[path].async('base64');
+                    let ext = path.split('.').pop().toLowerCase();
+                    let mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+                    extractedImages.push(`data:${mime};base64,${imgData}`);
+                }
+
+                let comp = getCurrentCompany();
+                let count = 0;
+
+                for (let i = 1; i < jsonRows.length; i++) {
+                    let row = jsonRows[i];
+                    if(!row || row.length === 0) continue;
+
+                    let desc = row.join(' - ');
+                    let date = new Date().toISOString().split('T')[0];
+                    let img = extractedImages[count] || '';
+
+                    if(desc.trim()) {
+                        comp.accidents.push({ type: 'DÖF / Uygunsuzluk', desc: desc, date: date, img: img });
+                        count++;
+                    }
+                }
+
+                saveDB();
+                renderTabContent();
+                alert(`${count} adet denetim kaydı ve ${extractedImages.length} adet görsel başarıyla yüklendi!`);
+            } catch (error) {
+                console.error(error);
+                alert('Dosya işlenirken bir hata oluştu!');
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
     function addAccidentWithImage() {
         let type = document.getElementById('accType').value;
         let desc = document.getElementById('accDesc').value;
@@ -674,7 +622,7 @@
         if(!desc) { alert('Lütfen açıklama girin'); return; }
 
         let comp = getCurrentCompany();
-        if (fileInput && fileInput.files && fileInput.files[0]) {
+        if (fileInput.files && fileInput.files[0]) {
             let reader = new FileReader();
             reader.onload = function(e) {
                 comp.accidents.push({ type, desc, date, img: e.target.result });
@@ -691,7 +639,7 @@
 
     function exportPersonnelExcel() {
         let comp = getCurrentCompany();
-        if(!comp.personnel || comp.personnel.length === 0) { alert('Dışa aktarılacak personel yok!'); return; }
+        if(comp.personnel.length === 0) { alert('Dışa aktarılacak personel yok!'); return; }
         let data = comp.personnel.map(p => ({ "Ad Soyad": p.name, "TC Kimlik": p.tc, "Görev": p.job, "Giriş Tarihi": p.date }));
         let worksheet = XLSX.utils.json_to_sheet(data);
         let workbook = XLSX.utils.book_new();
@@ -699,25 +647,44 @@
         XLSX.writeFile(workbook, `${comp.name}_personel.xlsx`);
     }
 
+    function importPersonnelExcel() {
+        let fileInput = document.getElementById('excelFile');
+        if(fileInput.files.length === 0) { alert('Dosya seçin!'); return; }
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            let data = new Uint8Array(e.target.result);
+            let workbook = XLSX.read(data, { type: 'array' });
+            let jsonRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
+            let comp = getCurrentCompany();
+            let count = 0;
+            for(let i = 1; i < jsonRows.length; i++) {
+                let row = jsonRows[i];
+                if(row && row[0]) {
+                    comp.personnel.push({ name: String(row[0]), tc: String(row[1]||''), job: String(row[2]||''), date: String(row[3]||''), trainings: [], health: [], ppe: [] });
+                    count++;
+                }
+            }
+            saveDB();
+            renderTabContent();
+            alert(`${count} personel eklendi.`);
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
     function addPersonnel() {
         let name = document.getElementById('pName').value.trim();
         let tc = document.getElementById('pTC').value.trim();
         let job = document.getElementById('pJob').value.trim();
         let date = document.getElementById('pDate').value;
-        if(!name) { alert('Lütfen personel adı girin!'); return; }
-        
-        let comp = getCurrentCompany();
-        if(!comp.personnel) comp.personnel = [];
-        
-        comp.personnel.push({ name, tc, job, date, trainings: [], health: [], ppe: [], observations: [] });
+        if(!name) return;
+        getCurrentCompany().personnel.push({ name, tc, job, date, trainings: [], health: [], ppe: [] });
         saveDB();
         renderTabContent();
     }
 
     function deleteItem(listName, index) {
         if(confirm('Silmek istediğinize emin misiniz?')) {
-            let comp = getCurrentCompany();
-            comp[listName].splice(index, 1);
+            getCurrentCompany()[listName].splice(index, 1);
             saveDB();
             renderTabContent();
         }
