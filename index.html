@@ -6,7 +6,8 @@
 <style>
 :root{--p:#1e3a8a;--s:#3b82f6;--d:#ef4444;--g:#10b981;--bd:#cbd5e1}
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-body{background:#f8fafc;color:#1e293b;padding:10px}
+body{background:#f8fafc;color:#1e293b;padding:58px 10px 10px}body.nb{padding-top:10px}
+#bar{display:none;position:fixed;top:0;left:0;right:0;height:48px;z-index:8;background:#172554;color:#fff;align-items:center;gap:12px;padding:0 10px;box-shadow:0 2px 6px #0004}
 .c{max-width:800px;margin:0 auto;padding-bottom:50px}
 header{background:var(--p);color:#fff;padding:15px;border-radius:12px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 header h1{font-size:1.1rem}
@@ -45,9 +46,10 @@ th{background:#f1f5f9;color:var(--p)}
 #lb{text-align:center}#lb img{max-width:100%;max-height:100%}
 li{margin:4px 0 4px 18px}
 .mt{text-align:center;color:#64748b;padding:20px}
-</style></head><body>
+</style></head><body class="nb"><div id="bar"><button class="b sm" onclick="openPanel()" aria-label="Yönetim paneli">☰ <span id="bd" style="color:#fbbf24;display:none">●</span></button><b>İSG Saha Yönetim Asistanı</b></div>
 <div class="c" id="app"></div>
-<div id="pm" class="md"><div class="mc"><h2>📄 Sicil dosyası önizleme</h2><div id="pv" style="max-height:60vh;overflow:auto;border:1px solid var(--bd);margin-bottom:12px"></div><button class="b g" onclick="pdfDl()">PDF indir</button><button class="b" onclick="$('pm').style.display='none'">Kapat</button></div></div>
+<div id="pm" class="md"><div class="mc"><h2 id="pmt">📄 Sicil dosyası önizleme</h2><div id="pv" style="max-height:60vh;overflow:auto;border:1px solid var(--bd);margin-bottom:12px"></div><button class="b g" onclick="pdfDl()">PDF indir</button><button class="b" onclick="$('pm').style.display='none'">Kapat</button></div></div>
+<div id="mp" class="md" style="padding:0" onclick="if(event.target==this)closePanel()"><div class="mc" style="margin:0;max-width:340px;min-height:100%;border-radius:0 12px 12px 0;background:#f8fafc;padding:15px"><div style="display:flex;justify-content:space-between;align-items:center"><h2 style="border:0;margin:0">⚙️ Yönetim paneli</h2><button class="b sm" onclick="closePanel()" aria-label="Kapat">✕</button></div><div id="mpc" style="margin-top:12px"></div></div></div>
 <div id="lb" class="md" onclick="this.style.display='none'"><img id="lbi" alt=""></div>
 <script>
 const $=i=>document.getElementById(i),
@@ -68,7 +70,7 @@ tx=(s,m,f)=>idb.then(d=>new Promise((res,rej)=>{const t=d.transaction(s,m),q=f(t
 get=(s,k)=>tx(s,'readonly',o=>o.get(k)),put=(s,k,v)=>tx(s,'readwrite',o=>o.put(v,k)),rm=(s,k)=>tx(s,'readwrite',o=>o.delete(k)),
 save=()=>put('kv','db',db).catch(e=>alert('Kayıt hatası: '+(e&&e.message||e)+'\nLütfen hemen yedek alın.')),
 imgSrc=async k=>{if(!cache.has(k))cache.set(k,await get('img',k));return cache.get(k)};
-function norm(){db.companies.forEach(c=>{c.id=sid(c.id)||uid();c.photos??=[];c.accidents??=[];c.personnel??=[];[...c.accidents,...c.photos].forEach(a=>{a.id=sid(a.id)||uid();if(a.img)a.img=sid(a.img)});c.personnel.forEach(p=>{p.id=sid(p.id)||uid();p.trainings??=[];p.health??=[];p.ppe??=[];p.perf??=[];p.perf.forEach(a=>{a.id=sid(a.id)||uid();if(a.img)a.img=sid(a.img)});p.health.forEach(r=>r.name??=r.type);p.ppe.forEach(r=>r.name??=r.item)})})}
+function norm(){normProf();db.companies.forEach(c=>{c.id=sid(c.id)||uid();c.photos??=[];c.accidents??=[];c.personnel??=[];c.docs??=[];c.docs.forEach(a=>{a.id=sid(a.id)||uid();a.key=sid(a.key)});[...c.accidents,...c.photos].forEach(a=>{a.id=sid(a.id)||uid();if(a.img)a.img=sid(a.img)});c.personnel.forEach(p=>{p.id=sid(p.id)||uid();p.trainings??=[];p.health??=[];p.ppe??=[];p.perf??=[];p.perf.forEach(a=>{a.id=sid(a.id)||uid();if(a.img)a.img=sid(a.img)});p.health.forEach(r=>r.name??=r.type);p.ppe.forEach(r=>r.name??=r.item)})})}
 const C=()=>db.companies.find(c=>c.id==cid);
 const shrink=f=>new Promise((res,rej)=>{const u=URL.createObjectURL(f),i=new Image();i.onload=()=>{const k=Math.min(1,1280/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',.72))};i.onerror=()=>rej(new Error('Görsel okunamadı'));i.src=u}),
 storeImg=async f=>{const k=uid();await put('img',k,await shrink(f));return k};
@@ -76,20 +78,18 @@ function hydrate(){document.querySelectorAll('img[data-i]').forEach(async m=>{m.
 async function zoom(k){$('lbi').src=await imgSrc(k);$('lb').style.display='block'}
 
 /* Firmalar */
-function home(){cid=pid=null;const lb=+localStorage.getItem('isg_bak')||0,age=(Date.now()-lb)/864e5;
-$('app').innerHTML=`<header><h1>🏗️ İSG Saha Yönetim Asistanı</h1></header>
-${age>14?`<div class="card warn">⚠ ${lb?Math.floor(age)+' gündür':'Henüz'} yedek alınmadı. Veriler yalnızca bu cihazda saklanıyor.</div>`:''}
+function home(){cid=pid=null;closePanel();setBar(1);const lb=+localStorage.getItem('isg_bak')||0,age=(Date.now()-lb)/864e5;
+$('app').innerHTML=`<header><h1>🏢 Firmalarım</h1></header>
 <div class="card"><h2>Firma / şantiye ekle</h2><input id="cn" placeholder="Firma veya şantiye adı"><input id="cd" placeholder="Lokasyon / açıklama"><button class="b g" onclick="addC()">Oluştur</button></div>
-<div class="card"><h2>Kayıtlı firmalar</h2><div class="grid">${db.companies.map(c=>`<div class="cc" onclick="pick('${c.id}')"><h3>${esc(c.name)}</h3><p>${esc(c.desc)||'Açıklama yok'}</p><span class="bg gr">${c.personnel.length} personel</span> <span class="bg r">${c.accidents.length} kayıt</span></div>`).join('')||'<p class="mt" style="grid-column:1/-1">Henüz firma yok.</p>'}</div></div>
-<div class="card"><h2>💾 Yedekleme</h2><button class="b" onclick="backup()">Yedeği indir (.json)</button><input type="file" id="rf" accept=".json"><button class="b" onclick="restore()">Yedekten geri yükle</button></div>`}
-function addC(){const n=$('cn').value.trim();if(!n)return alert('Firma adı girin');db.companies.push({id:uid(),name:n,desc:$('cd').value.trim(),personnel:[],accidents:[],photos:[]});save();home()}
+<div class="card"><h2>Kayıtlı firmalar</h2><div class="grid">${db.companies.map(c=>`<div class="cc" onclick="pick('${c.id}')"><h3>${esc(c.name)}</h3><p>${esc(c.desc)||'Açıklama yok'}</p><span class="bg gr">${c.personnel.length} personel</span> <span class="bg r">${c.accidents.length} kayıt</span></div>`).join('')||'<p class="mt" style="grid-column:1/-1">Henüz firma yok.</p>'}</div></div>`}
+function addC(){const n=$('cn').value.trim();if(!n)return alert('Firma adı girin');db.companies.push({id:uid(),name:n,desc:$('cd').value.trim(),personnel:[],accidents:[],photos:[],docs:[]});save();home()}
 function pick(id){cid=id;pid=null;tab='p';dash()}
 function editC(){const c=C(),n=prompt('Firma adı',c.name);if(n===null)return;const d=prompt('Açıklama',c.desc||'');if(d===null)return;c.name=n.trim()||c.name;c.desc=d.trim();save();dash()}
-function delC(){const c=C();if(!confirm('"'+c.name+'" ve tüm kayıtları kalıcı olarak silinsin mi?'))return;[...c.accidents,...c.photos,...c.personnel.flatMap(p=>p.perf||[])].forEach(x=>x.img&&rm('img',x.img));db.companies=db.companies.filter(x=>x!==c);save();home()}
+function delC(){const c=C();if(!confirm('"'+c.name+'" ve tüm kayıtları kalıcı olarak silinsin mi?'))return;[...c.accidents,...c.photos,...c.personnel.flatMap(p=>p.perf||[]),...(c.docs||[]).map(d=>({img:d.key}))].forEach(x=>x.img&&rm('img',x.img));db.companies=db.companies.filter(x=>x!==c);save();home()}
 function dash(){const c=C();if(!c)return home();
 $('app').innerHTML=`<header><div><h1>🏢 ${esc(c.name)}</h1><small>${esc(c.desc)}</small></div><div><button class="b sm" onclick="editC()" title="Düzenle">✎</button> <button class="b sm dg" onclick="delC()" title="Sil">🗑</button> <button class="b sm" onclick="home()">Firmalar</button></div></header>
-<div class="tabs">${[['p','Personel'],['a','Denetim / olay'],['g','📷 Görseller'],['s','Özet']].map(([k,n])=>`<button class="tb ${tab==k?'on':''}" onclick="tab='${k}';pid=null;dash()">${n}</button>`).join('')}</div><div id="tc"></div>`;rc()}
-function rc(){const c=C();$('tc').innerHTML=tab=='p'?(pid?detail(c):plist(c)):tab=='a'?acc(c):tab=='g'?gal(c):sum(c);hydrate()}
+<div class="tabs">${[['p','Personel'],['a','Denetim / olay'],['g','📷 Görseller'],['d','📁 Dökümanlar'],['s','Özet']].map(([k,n])=>`<button class="tb ${tab==k?'on':''}" onclick="tab='${k}';pid=null;dash()">${n}</button>`).join('')}</div><div id="tc"></div>`;rc()}
+function rc(){const c=C();$('tc').innerHTML=tab=='p'?(pid?detail(c):plist(c)):tab=='a'?acc(c):tab=='g'?gal(c):tab=='d'?dcs(c):sum(c);hydrate()}
 
 /* Personel */
 const warns=p=>[...p.trainings,...p.health].filter(r=>soon(days(r.exp)));
@@ -144,6 +144,26 @@ function sum(c){const W=c.personnel.flatMap(p=>warns(p).map(r=>({p,r,n:days(r.ex
 return `<div class="card"><h2>📊 Özet</h2><div class="st"><div><b>${c.personnel.length}</b>Personel</div><div><b>${c.accidents.length}</b>Denetim / olay</div><div><b>${n(TY[1])}</b>İş kazası</div><div><b>${n(TY[0])}</b>Ramak kala</div><div><b>${n(TY[2])}</b>DÖF / uygunsuzluk</div><div><b>${c.photos.length}</b>Saha görseli</div></div></div>
 <div class="card"><h2>⏰ Süresi dolan / yaklaşan (30 gün)</h2>${W.length?`<ul>${W.map(x=>`<li><b>${esc(x.p.name)}</b> – ${esc(x.r.name)} ${badge(x.n)}</li>`).join('')}</ul>`:'<p class="mt">Uyarı yok.</p>'}</div>`}
 
+/* Firma dökümanları (PDF) */
+const DT=['Risk Analizi','Eylem Planı','Acil Durum Planı','Eğitim Dökümanı','Diğer'],
+fname=d=>d.name.replace(/[\\\/:*?"<>|]/g,'_')+'.pdf',
+rd=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(new Error('Dosya okunamadı'));r.readAsDataURL(f)}),
+blobOf=async d=>{const u=await get('img',d.key);if(!u)throw Error('Dosya bulunamadı');return new Blob([await (await fetch(u)).blob()],{type:'application/pdf'})},
+docOf=id=>C().docs.find(x=>x.id==id);
+function dcs(c){c.docs??=[];const L=[...c.docs].sort((a,b)=>b.date.localeCompare(a.date));
+return `<div class="card"><h2>📁 Firma dökümanları</h2><label>Döküman türü</label><select id="dt">${DT.map(t=>`<option>${t}</option>`).join('')}</select><input id="dn" placeholder="Döküman adı (boşsa dosya adı kullanılır)"><label>PDF dosyası</label><input type="file" id="df" accept="application/pdf,.pdf" multiple><button class="b g" onclick="addD()">Yükle</button><small>Risk analizi, eylem planı gibi PDF'leri ekleyin. Dosyalar bu cihazda saklanır ve yedeğe dahildir.</small></div>
+<div class="card"><h2>Kayıtlı dökümanlar (${L.length})</h2>${L.map(d=>`<div style="border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:8px"><b>${esc(d.name)}</b><br><small><span class="bg gr">${esc(d.cat)}</span> ${esc(d.date)} · ${(d.size/1048576).toFixed(2)} MB</small><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="b sm" onclick="viewD('${d.id}')">👁 Aç</button><button class="b sm" onclick="dlD('${d.id}')">⬇ İndir</button><button class="b sm v" onclick="shareD('${d.id}')">📤 Gönder</button><button class="b sm dg" onclick="delD('${d.id}')">Sil</button></div></div>`).join('')||'<p class="mt">Henüz döküman yok.</p>'}</div>`}
+async function addD(){const fs=[...$('df').files];if(!fs.length)return alert('Önce PDF dosyası seçin');const c=C();let n=0;
+for(const f of fs){if(!/\.pdf$/i.test(f.name)&&f.type!='application/pdf'){alert(f.name+' PDF değil, atlandı');continue}
+try{const k=uid();await put('img',k,await rd(f));c.docs.push({id:uid(),key:k,name:(fs.length==1&&$('dn').value.trim())||f.name.replace(/\.pdf$/i,''),cat:$('dt').value,date:today(),size:f.size});n++}catch(e){alert(e.message)}}
+if(n){save();rc()}}
+async function viewD(id){const w=window.open('','_blank');try{const u=URL.createObjectURL(await blobOf(docOf(id)));if(w)w.location=u;else dlD(id)}catch(e){if(w)w.close();alert(e.message)}}
+async function dlD(id){try{dl(await blobOf(docOf(id)),fname(docOf(id)))}catch(e){alert(e.message)}}
+async function shareD(id){const d=docOf(id);try{const b=await blobOf(d),f=new File([b],fname(d),{type:'application/pdf'});
+if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:d.name,text:C().name+' – '+d.cat});
+else{dl(b,fname(d));alert("Bu tarayıcı doğrudan paylaşımı desteklemiyor. Dosya indirildi; e-posta veya WhatsApp'a ekleyerek gönderebilirsiniz.")}}catch(e){if(e.name!='AbortError')alert('Gönderilemedi: '+e.message)}}
+function delD(id){const c=C(),d=docOf(id);if(!confirm('"'+d.name+'" silinsin mi?'))return;rm('img',d.key);c.docs=c.docs.filter(x=>x!==d);save();rc()}
+
 /* Silme */
 function selAll(el,k){document.querySelectorAll('.sel-'+k).forEach(x=>x.checked=el.checked)}
 function bulk(k){const s=[...document.querySelectorAll('.sel-'+k+':checked')].map(x=>x.value);if(!s.length)return alert('Önce kayıt seçin');if(confirm(s.length+' kayıt silinsin mi?'))drop(k,s)}
@@ -160,14 +180,92 @@ async function impA(){try{const R=await rows($('xa').files[0]),c=C();let n=0;R.f
 /* PDF */
 function pdfHtml(){const c=C(),p=c.personnel.find(x=>x.id==pid),li=r=>`<li>${esc(r.date)} – ${esc(r.name)}${r.exp?' (geçerlilik: '+esc(r.exp)+')':''}</li>`;
 return `<div style="padding:20px;color:#000;background:#fff;font-size:.9rem"><div style="text-align:center;border-bottom:2px solid #1e3a8a;padding-bottom:10px;margin-bottom:15px"><h2 style="color:#1e3a8a;border:0">İSG PERSONEL SİCİL DOSYASI</h2><p style="font-size:.85rem;color:#555">Şantiye: ${esc(c.name)}</p></div><p><b>Ad soyad:</b> ${esc(p.name)}</p><p><b>TC:</b> ${esc(p.tc)||'-'}</p><p><b>Görev:</b> ${esc(p.job)||'-'}</p><p><b>İşe giriş:</b> ${esc(p.date)||'-'}</p>${[['Verilen eğitimler','trainings'],['Sağlık muayeneleri','health'],['KKD zimmet geçmişi','ppe']].map(([t,f])=>`<h3 style="color:#1e3a8a;margin:14px 0 4px">${t}</h3><ul>${p[f].length?p[f].map(li).join(''):'<li>Kayıt yok</li>'}</ul>`).join('')}<h3 style="color:#1e3a8a;margin:14px 0 4px">Saha İSG performansı</h3><ul>${(p.perf||[]).length?p.perf.map(a=>`<li>${esc(a.date)} – [${esc(a.type)}${a.type==PT[0]?(a.done?', giderildi':', açık'):''}] ${esc(a.desc)}</li>`).join(''):'<li>Kayıt yok</li>'}</ul></div>`}
-function pdfOpen(){$('pv').innerHTML=pdfHtml();$('pm').style.display='block'}
-function pdfDl(){const p=C().personnel.find(x=>x.id==pid),e=document.createElement('div');e.innerHTML=pdfHtml();html2pdf().from(e).set({margin:10,filename:p.name.replace(/\s+/g,'_')+'_isg_sicil.pdf',image:{type:'jpeg',quality:.98},html2canvas:{scale:2},jsPDF:{unit:'mm',format:'a4'}}).save().then(()=>$('pm').style.display='none')}
+function pdfOpen(){cvMode=false;$('pmt').textContent='📄 Sicil dosyası önizleme';$('pv').innerHTML=pdfHtml();$('pm').style.display='block'}
+function pdfDl(){if(cvMode)return cvDl();const p=C().personnel.find(x=>x.id==pid),e=document.createElement('div');e.innerHTML=pdfHtml();html2pdf().from(e).set({margin:10,filename:p.name.replace(/\s+/g,'_')+'_isg_sicil.pdf',image:{type:'jpeg',quality:.98},html2canvas:{scale:2},jsPDF:{unit:'mm',format:'a4'}}).save().then(()=>$('pm').style.display='none')}
 
 /* Yedek */
 function dl(b,n){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5e3)}
-async function backup(){try{const ks=await tx('img','readonly',o=>o.getAllKeys()),vs=await tx('img','readonly',o=>o.getAll()),im={};ks.forEach((k,i)=>im[k]=vs[i]);dl(new Blob([JSON.stringify({v:2,db,im})],{type:'application/json'}),'isg_yedek_'+today()+'.json');localStorage.setItem('isg_bak',Date.now());home()}catch(e){alert('Yedek alınamadı: '+e.message)}}
+async function backup(){try{const ks=await tx('img','readonly',o=>o.getAllKeys()),vs=await tx('img','readonly',o=>o.getAll()),im={};ks.forEach((k,i)=>im[k]=vs[i]);dl(new Blob([JSON.stringify({v:2,db,im})],{type:'application/json'}),'isg_yedek_'+today()+'.json');localStorage.setItem('isg_bak',Date.now());bak()}catch(e){alert('Yedek alınamadı: '+e.message)}}
 async function restore(){const f=$('rf').files[0];if(!f)return alert('Önce yedek dosyası seçin');try{const j=JSON.parse(await f.text());if(!j.db||!Array.isArray(j.db.companies))throw Error('Geçersiz yedek dosyası');if(!confirm('Mevcut tüm veriler silinip yedekle değiştirilecek. Devam edilsin mi?'))return;await tx('img','readwrite',o=>o.clear());for(const k in j.im||{})await put('img',sid(k),j.im[k]);db=j.db;norm();cache.clear();await save();home()}catch(e){alert('Geri yükleme hatası: '+e.message)}}
 
+/* Hesap: cihaz üzerinde e-posta veya telefon + şifre (PBKDF2 ile özetlenir) */
+const b64=u=>btoa(String.fromCharCode(...u)),ub=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0)),
+hash=async(pw,salt)=>b64(new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:2e5},await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveBits']),256))),
+A=()=>{try{return JSON.parse(localStorage.getItem('isg_auth'))}catch(e){return null}};
+const savePw=(id,pw)=>{try{window.PasswordCredential&&navigator.credentials.store(new PasswordCredential({id,password:pw,name:id})).catch(()=>{})}catch(e){}};
+let amode='email',fails=0,lock=0;
+function gate(){closePanel();const a=A();if(!a)return authUI(1);sessionStorage.getItem('isg_ok')?home():authUI(0)}
+function authUI(reg){setBar(0);const a=A(),em=amode=='email';
+$('app').innerHTML=`<header><h1>🏗️ İSG Saha Yönetim Asistanı</h1></header><div class="card"><h2>${reg?'Kayıt ol':'Giriş yap'}</h2>
+${reg?`<div class="tabs"><button type="button" class="tb ${em?'on':''}" onclick="amode='email';authUI(1)">E-posta</button><button type="button" class="tb ${em?'':'on'}" onclick="amode='phone';authUI(1)">Telefon</button></div>`:''}
+<form id="af" method="post" action="#" autocomplete="on" onsubmit="event.preventDefault();${reg?'signup()':'login()'}">
+${reg?`<input id="ai" name="username" type="${em?'email':'tel'}" placeholder="${em?'E-posta adresi':'Telefon no (5xx xxx xx xx)'}" autocomplete="username" required>`:`<input id="ai" name="username" type="${/@/.test(a.ident)?'email':'tel'}" value="${esc(a.ident)}" autocomplete="username" readonly>`}
+<input id="ap" name="password" type="password" placeholder="Şifre${reg?' (en az 8 karakter)':''}" autocomplete="${reg?'new-password':'current-password'}" required${reg?'':' autofocus'}>
+${reg?'<input id="ap2" name="password2" type="password" placeholder="Şifre tekrar" autocomplete="new-password" required>':''}
+<button type="submit" class="b g">${reg?'Kayıt ol':'Giriş yap'}</button></form><small>Hesap ve veriler yalnızca bu cihazda saklanır.</small>
+${reg?'':'<div style="margin-top:10px"><button type="button" class="b sm" onclick="forgot()">Şifremi unuttum</button></div>'}</div>`}
+async function signup(){const id=($('ai').value||'').trim(),pw=$('ap').value;let v;
+if(amode=='email'){if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(id))return alert('Geçerli bir e-posta adresi girin');v=id.toLowerCase()}
+else{v=id.replace(/[\s()-]/g,'');if(!/^\+?\d{10,14}$/.test(v))return alert('Geçerli bir telefon numarası girin')}
+if(pw.length<8)return alert('Şifre en az 8 karakter olmalı');if(pw!=$('ap2').value)return alert('Şifreler eşleşmiyor');
+if(!crypto.subtle)return alert('Bu tarayıcı güvenli şifrelemeyi desteklemiyor (https gerekir).');
+const salt=crypto.getRandomValues(new Uint8Array(16));localStorage.setItem('isg_auth',JSON.stringify({ident:v,salt:b64(salt),hash:await hash(pw,salt)}));savePw(v,pw);sessionStorage.setItem('isg_ok','1');home()}
+async function login(){if(Date.now()<lock)return alert('Çok fazla hatalı deneme. '+Math.ceil((lock-Date.now())/1e3)+' saniye bekleyin.');const a=A();
+if(await hash($('ap').value,ub(a.salt))===a.hash){fails=0;savePw(a.ident,$('ap').value);sessionStorage.setItem('isg_ok','1');home()}else{if(++fails>=5){lock=Date.now()+3e4;fails=0}alert('Şifre hatalı')}}
+function logout(){sessionStorage.removeItem('isg_ok');cid=pid=null;gate()}
+async function chpw(){const a=A(),n=$('np').value;if(await hash($('op').value,ub(a.salt))!==a.hash)return alert('Mevcut şifre hatalı');if(n.length<8)return alert('Yeni şifre en az 8 karakter olmalı');const s=crypto.getRandomValues(new Uint8Array(16));a.salt=b64(s);a.hash=await hash(n,s);localStorage.setItem('isg_auth',JSON.stringify(a));savePw(a.ident,n);alert('Şifre değiştirildi');home()}
+async function forgot(){const t=(prompt('Şifre sıfırlanırsa bu cihazdaki TÜM veriler (firmalar, personel, fotoğraflar, dökümanlar) silinir; yedeğiniz yoksa geri getirilemez.\nOnaylamak için SİL yazın:')||'').trim().toUpperCase().replace('İ','I');if(t!=='SIL')return;
+await tx('img','readwrite',o=>o.clear());await tx('kv','readwrite',o=>o.clear());['isg_auth','isg_multi_db','isg_bak'].forEach(k=>localStorage.removeItem(k));sessionStorage.clear();db={companies:[]};cache.clear();gate()}
+
+/* Profil / CV */
+const PK=['name','title','cert','phone','email','city','about','skills'],
+PF={exp:{t:'💼 İş deneyimleri',f:[['org','Şirket / şantiye'],['role','Pozisyon'],['from','Başlangıç','month'],['to','Bitiş (boşsa halen çalışıyorum)','month'],['desc','Görev ve sorumluluklar','area']]},
+edu:{t:'🎓 Eğitim',f:[['org','Okul / kurum'],['role','Bölüm / program'],['from','Başlangıç','month'],['to','Bitiş','month']]},
+certs:{t:'📜 Belgeler ve sertifikalar',f:[['org','Veren kurum'],['role','Belge adı'],['from','Alınış tarihi','month'],['to','Geçerlilik bitişi','month'],['desc','Not (belge no vb.)','area']]}},
+mf=m=>m?m.slice(5)+'.'+m.slice(0,4):'',
+per=(k,x)=>k=='certs'?[mf(x.from),x.to&&'Geçerlilik: '+mf(x.to)].filter(Boolean).join(' · '):[mf(x.from),x.to?mf(x.to):k=='exp'?'Halen':''].filter(Boolean).join(' – '),
+srtP=(a,b)=>(b.from||'').localeCompare(a.from||''),
+cvName=()=>(db.profile.name||'CV').trim().replace(/\s+/g,'_').replace(/[\\\/:*?"<>|]/g,'')+'_CV.pdf';
+let pe={exp:null,edu:null,certs:null},cvMode=false;
+function normProf(){const P=db.profile??={};PK.forEach(k=>P[k]=String(P[k]??''));['exp','edu','certs'].forEach(k=>{P[k]=Array.isArray(P[k])?P[k]:[];P[k].forEach(x=>x.id=sid(x.id)||uid())});if(P.img)P.img=sid(P.img)}
+function readProf(){if(!$('pf_name'))return;PK.forEach(k=>db.profile[k]=$('pf_'+k).value.trim())}
+function pcard(k){const S=PF[k],L=[...db.profile[k]].sort(srtP),E=L.find(x=>x.id==pe[k]);
+return `<div class="card"><h2>${S.t}</h2>${S.f.map(([n,l,t])=>`<label>${l}</label>`+(t=='area'?`<textarea id="pf_${k}_${n}" rows="2">${esc(E?E[n]:'')}</textarea>`:`<input id="pf_${k}_${n}" type="${t||'text'}" autocomplete="off" value="${esc(E?E[n]:'')}">`)).join('')}<button class="b g" onclick="pSave('${k}')">${E?'Güncelle':'Ekle'}</button>${E?`<button class="b" onclick="pe.${k}=null;readProf();prof()">Vazgeç</button>`:''}${L.map(x=>`<div style="border:1px solid var(--bd);border-radius:8px;padding:10px;margin-top:8px"><b>${esc(x.role)}</b> – ${esc(x.org)}<br><small>${esc(per(k,x))}</small>${x.desc?`<p style="white-space:pre-wrap;font-size:.85rem">${esc(x.desc)}</p>`:''}<div style="margin-top:6px"><button class="b sm" onclick="pEdit('${k}','${x.id}')">✎ Düzenle</button> <button class="b sm dg" onclick="pDel('${k}','${x.id}')">Sil</button></div></div>`).join('')}</div>`}
+function prof(){cid=pid=null;const P=db.profile;if(!P.email&&!P.phone){const i=(A()||{}).ident||'';/@/.test(i)?P.email=i:P.phone=i}
+const inp=(k,ph,t)=>`<input id="pf_${k}" type="${t||'text'}" placeholder="${ph}" autocomplete="off" value="${esc(P[k])}">`;
+$('app').innerHTML=`<header><h1>👤 Profilim (CV)</h1><button class="b sm" onclick="readProf();save();home()">Ana sayfa</button></header>
+<div class="card"><h2>Kişisel bilgiler</h2><div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">${P.img?`<img class="th" style="width:70px;height:88px" alt="" data-i="${P.img}" onclick="zoom('${P.img}')">`:'<div class="th" style="width:70px;height:88px"></div>'}<div style="flex:1"><input type="file" id="pph" accept="image/*" onchange="pPhoto(this)" style="margin:0 0 6px">${P.img?'<button class="b sm dg" onclick="pPhoto(null)">Fotoğrafı kaldır</button>':''}</div></div>
+${inp('name','Ad soyad')}${inp('title','Unvan (örn: İş Güvenliği Uzmanı)')}<label>İSG belge sınıfı</label><select id="pf_cert">${['','A sınıfı İSG uzmanı','B sınıfı İSG uzmanı','C sınıfı İSG uzmanı','İşyeri hekimi','Diğer sağlık personeli'].map(o=>`<option${P.cert==o?' selected':''}>${o}</option>`).join('')}</select>
+${inp('phone','Telefon','tel')}${inp('email','E-posta','email')}${inp('city','Şehir')}<label>Hakkımda</label><textarea id="pf_about" rows="4" placeholder="Kısa profesyonel özet">${esc(P.about)}</textarea>${inp('skills','Beceriler (virgülle ayırın)')}
+<button class="b g" onclick="readProf();save();alert('Profil kaydedildi')">Bilgileri kaydet</button></div>
+${pcard('exp')}${pcard('edu')}${pcard('certs')}
+<div class="card"><h2>📄 CV'yi PDF olarak al</h2><button class="b" onclick="cvOpen()">👁 Önizle</button><button class="b" onclick="cvDl()">⬇ PDF indir</button><button class="b v" onclick="cvShare()">📤 İş başvurusu için gönder</button></div>`;hydrate()}
+async function pPhoto(inp){readProf();const P=db.profile;try{const f=inp&&inp.files[0];if(inp&&!f)return;const k=f?await storeImg(f):'';if(P.img){rm('img',P.img);cache.delete(P.img)}P.img=k;save();prof()}catch(e){alert(e.message)}}
+function pSave(k){readProf();const L=db.profile[k],E=L.find(x=>x.id==pe[k]),o={};PF[k].f.forEach(([n])=>o[n]=$('pf_'+k+'_'+n).value.trim());if(!o.role&&!o.org)return alert('En az şirket/kurum veya ad/pozisyon alanını doldurun');if(E)Object.assign(E,o);else L.push({id:uid(),...o});pe[k]=null;save();prof()}
+function pEdit(k,id){readProf();pe[k]=id;prof();$('pf_'+k+'_org').scrollIntoView({behavior:'smooth',block:'center'})}
+function pDel(k,id){if(!confirm('Bu kayıt silinsin mi?'))return;readProf();db.profile[k]=db.profile[k].filter(x=>x.id!=id);save();prof()}
+async function cvHtml(){readProf();const P=db.profile,ph=P.img?await imgSrc(P.img):'',
+sec=(t,b)=>b?`<h3 style="color:#1e3a8a;border-bottom:2px solid #1e3a8a;padding-bottom:3px;margin:16px 0 8px;font-size:1rem">${t}</h3>${b}`:'',
+it=(k,x)=>`<div style="margin-bottom:8px;page-break-inside:avoid"><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(x.role||x.org)}</b><span style="color:#555;font-size:.8rem;white-space:nowrap">${esc(per(k,x))}</span></div>${x.role&&x.org?`<div>${esc(x.org)}</div>`:''}${x.desc?`<div style="font-size:.85rem;color:#444;white-space:pre-wrap">${esc(x.desc)}</div>`:''}</div>`,
+list=k=>[...P[k]].sort(srtP).map(x=>it(k,x)).join('');
+return `<div style="padding:24px;color:#000;background:#fff;font-size:.9rem;line-height:1.4"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:3px solid #1e3a8a;padding-bottom:12px"><div><h1 style="font-size:1.6rem;color:#1e3a8a">${esc(P.name)||'Ad Soyad'}</h1><div style="font-size:1.05rem">${esc(P.title)}${P.cert?' · '+esc(P.cert):''}</div><div style="color:#555;font-size:.85rem;margin-top:6px">${[P.phone,P.email,P.city].filter(Boolean).map(esc).join(' | ')}</div></div>${ph?`<img src="${esc(ph)}" style="width:90px;height:110px;object-fit:cover;border-radius:6px">`:''}</div>${sec('Hakkımda',P.about?`<p style="white-space:pre-wrap">${esc(P.about)}</p>`:'')}${sec('İş deneyimi',list('exp'))}${sec('Eğitim',list('edu'))}${sec('Belgeler ve sertifikalar',list('certs'))}${sec('Beceriler',P.skills.split(',').map(x=>x.trim()).filter(Boolean).map(x=>`<span style="display:inline-block;background:#e0e7ff;color:#1e3a8a;border-radius:4px;padding:2px 8px;margin:0 4px 4px 0;font-size:.8rem">${esc(x)}</span>`).join(''))}</div>`}
+async function cvOpen(){$('pv').innerHTML=await cvHtml();cvMode=true;$('pmt').textContent='📄 CV önizleme';$('pm').style.display='block'}
+async function cvBlob(){const e=document.createElement('div');e.innerHTML=await cvHtml();await Promise.all([...e.querySelectorAll('img')].map(i=>i.decode?i.decode().catch(()=>{}):0));return html2pdf().set({margin:8,image:{type:'jpeg',quality:.98},html2canvas:{scale:2},jsPDF:{unit:'mm',format:'a4'},pagebreak:{mode:['css','legacy']}}).from(e).outputPdf('blob')}
+async function cvDl(){try{dl(await cvBlob(),cvName());$('pm').style.display='none'}catch(e){alert('PDF oluşturulamadı: '+e.message)}}
+async function cvShare(){try{const b=await cvBlob(),f=new File([b],cvName(),{type:'application/pdf'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:'CV – '+db.profile.name,text:'Özgeçmişim ektedir.'});else{dl(b,cvName());alert("Bu tarayıcı doğrudan paylaşımı desteklemiyor. CV indirildi; e-posta veya WhatsApp'a ekleyerek gönderebilirsiniz.")}}catch(e){if(e.name!='AbortError')alert('Gönderilemedi: '+e.message)}}
+
+/* Yönetim paneli (sol üst ☰): yalnızca 3 seçenek, her biri ana ekranda kendi sayfasını açar */
+function panelHtml(){const lb=+localStorage.getItem('isg_bak')||0,age=(Date.now()-lb)/864e5;
+return `<button class="b" style="text-align:left;padding:14px;margin-bottom:10px" onclick="closePanel();prof()">👤 Profilim</button><button class="b" style="text-align:left;padding:14px;margin-bottom:10px" onclick="closePanel();bak()">💾 Yedekleme${age>14?' <span style="color:#fbbf24">●</span>':''}</button><button class="b" style="text-align:left;padding:14px;margin-bottom:10px" onclick="closePanel();acct()">🔐 Hesap</button>`}
+function bak(){cid=pid=null;setBar(1);const lb=+localStorage.getItem('isg_bak')||0,age=(Date.now()-lb)/864e5;
+$('app').innerHTML=`<header><h1>💾 Yedekleme</h1><button class="b sm" onclick="home()">Ana sayfa</button></header>${age>14?`<div class="card warn">⚠ ${lb?Math.floor(age)+' gündür':'Henüz'} yedek alınmadı. Veriler yalnızca bu cihazda saklanıyor.</div>`:''}
+<div class="card"><h2>Yedek al / geri yükle</h2><button class="b" onclick="backup()">Yedeği indir (.json)</button><input type="file" id="rf" accept=".json"><button class="b" onclick="restore()">Yedekten geri yükle</button></div>`}
+function acct(){cid=pid=null;$('app').innerHTML=`<header><h1>🔐 Hesap</h1><button class="b sm" onclick="home()">Ana sayfa</button></header>
+<div class="card"><h2>Şifre ve oturum</h2><form autocomplete="on" onsubmit="event.preventDefault();chpw()"><input name="username" type="text" value="${esc((A()||{}).ident)}" autocomplete="username" readonly><input id="op" name="password" type="password" placeholder="Mevcut şifre" autocomplete="current-password"><input id="np" name="new-password" type="password" placeholder="Yeni şifre (en az 8 karakter)" autocomplete="new-password"><button type="submit" class="b">Şifreyi değiştir</button></form><button type="button" class="b dg" onclick="logout()">Çıkış yap</button></div>`}
+function setBar(v){$('bar').style.display=v?'flex':'none';document.body.classList.toggle('nb',!v);$('bd').style.display=(Date.now()-(+localStorage.getItem('isg_bak')||0))/864e5>14?'inline':'none'}
+function openPanel(){$('mpc').innerHTML=panelHtml();$('mp').style.display='block'}
+function closePanel(){$('mp').style.display='none'}
+
 /* Başlangıç: eski localStorage verisi varsa taşınır (silinmez) */
-(async()=>{try{db=await get('kv','db');if(!db){db={companies:[]};const o=JSON.parse(localStorage.getItem('isg_multi_db')||'null');if(o&&o.companies){for(const c of o.companies){for(const a of c.accidents||[])if(a.img){const k=uid();await put('img',k,a.img);a.img=k}db.companies.push(c)}norm();await save()}}norm();navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){alert('Depolama açılamadı: '+e)}home()})();
+(async()=>{try{db=await get('kv','db');if(!db){db={companies:[]};const o=JSON.parse(localStorage.getItem('isg_multi_db')||'null');if(o&&o.companies){for(const c of o.companies){for(const a of c.accidents||[])if(a.img){const k=uid();await put('img',k,a.img);a.img=k}db.companies.push(c)}norm();await save()}}norm();navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){alert('Depolama açılamadı: '+e)}gate()})();
 </script></body></html>
