@@ -1,697 +1,173 @@
 <!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İSG Saha Yönetim Asistanı - Final</title>
-    <!-- SheetJS (XLSX) ve JSZip Kütüphaneleri -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-    <!-- html2pdf.js Kütüphanesi (PDF İndirme için) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <style>
-        :root {
-            --primary: #1e3a8a;
-            --secondary: #3b82f6;
-            --accent: #f59e0b;
-            --danger: #ef4444;
-            --success: #10b981;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text: #1e293b;
-            --border: #cbd5e1;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background: var(--bg); color: var(--text); padding: 10px; }
-        .container { max-width: 800px; margin: 0 auto; padding-bottom: 50px; }
-        
-        header { background: var(--primary); color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        header h1 { font-size: 1.1rem; }
-        .btn-back { background: var(--secondary); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
-        
-        .card { background: var(--card-bg); border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid var(--border); }
-        h2 { font-size: 1.1rem; color: var(--primary); margin-bottom: 12px; border-bottom: 2px solid var(--bg); padding-bottom: 6px; }
-        
-        input, select, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; }
-        button.btn-primary { background: var(--success); color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 8px; }
-        button.btn-camera { background: #8b5cf6; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 8px; }
-        button.btn-excel { background: #059669; color: white; border: none; padding: 10px; width: 100%; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; margin-bottom: 8px; }
-        button.btn-danger { background: var(--danger); color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
-        button.btn-bulk-delete { background: var(--danger); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold; margin-bottom: 10px; }
-        
-        .tabs { display: flex; gap: 5px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; }
-        .tab-btn { background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; font-size: 0.85rem; font-weight: 600; color: #475569; }
-        .tab-btn.active { background: var(--primary); color: white; }
-        
-        .table-responsive { width: 100%; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 5px; }
-        th, td { border: 1px solid var(--border); padding: 8px; text-align: left; vertical-align: middle; }
-        th { background: #f1f5f9; color: var(--primary); }
-        
-        .company-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
-        .company-card { background: white; border: 2px solid var(--secondary); border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .company-card:hover { background: #eff6ff; transform: translateY(-2px); }
-        .company-card h3 { color: var(--primary); margin-bottom: 5px; font-size: 1.1rem; }
-        
-        .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
-        .badge-green { background: #d1fae5; color: #065f46; }
-        .badge-red { background: #fee2e2; color: #991b1b; }
-        
-        .report-img { width: 80px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); cursor: pointer; }
-        
-        /* Galeri Paneli */
-        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
-        .gallery-item { background: white; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: center; padding: 5px; position: relative; }
-        .gallery-item input[type="checkbox"] { position: absolute; top: 8px; left: 8px; width: 18px; height: 18px; }
-        .gallery-item img { width: 100%; height: 100px; object-fit: cover; cursor: pointer; border-radius: 4px; }
-        .gallery-item p { font-size: 0.75rem; color: #64748b; padding: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-        .stats-box { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
-        .stat-card { background: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: 8px; text-align: center; }
-        .stat-card h4 { font-size: 0.8rem; color: #64748b; }
-        .stat-card p { font-size: 1.2rem; font-weight: bold; color: var(--primary); margin-top: 5px; }
-
-        /* Modal Önizleme */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); padding: 20px; }
-        .modal-content { background-color: #fff; margin: auto; padding: 20px; border-radius: 12px; width: 100%; max-width: 700px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .close-modal { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .close-modal:hover { color: black; }
-    </style>
-</head>
-<body>
-
-<div class="container" id="app"></div>
-
-<!-- PDF Önizleme Modalı -->
-<div id="pdfModal" class="modal">
-    <div class="modal-content">
-        <span class="close-modal" onclick="closePdfModal()">&times;</span>
-        <h2 style="margin-bottom: 15px;">📄 İSG Sicil Dosyası Önizleme</h2>
-        <div id="pdfPreviewContainer" style="max-height: 450px; overflow-y: auto; border: 1px solid var(--border); padding: 15px; background: #fff; margin-bottom: 15px;"></div>
-        <button class="btn-primary" onclick="downloadPdfFinal()">Dosyayı Cihaza İndir (.pdf)</button>
-    </div>
-</div>
-
+<html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>İSG Saha Yönetim Asistanı</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+:root{--p:#1e3a8a;--s:#3b82f6;--d:#ef4444;--g:#10b981;--bd:#cbd5e1}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{background:#f8fafc;color:#1e293b;padding:10px}
+.c{max-width:800px;margin:0 auto;padding-bottom:50px}
+header{background:var(--p);color:#fff;padding:15px;border-radius:12px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+header h1{font-size:1.1rem}
+.card{background:#fff;border-radius:12px;padding:15px;margin-bottom:15px;border:1px solid var(--bd)}
+.warn{background:#fef3c7;border-color:#f59e0b;font-size:.9rem}
+h2{font-size:1.05rem;color:var(--p);margin-bottom:12px;border-bottom:2px solid #f1f5f9;padding-bottom:6px}
+label{display:block;font-size:.8rem;font-weight:600;color:#64748b;margin-bottom:3px}
+input,select,textarea{width:100%;padding:10px;margin-bottom:10px;border:1px solid var(--bd);border-radius:8px;font-size:.95rem}
+input[type=checkbox]{width:auto;margin:0}
+.b{display:block;width:100%;background:var(--s);color:#fff;border:0;padding:11px;border-radius:8px;font-size:.95rem;font-weight:700;cursor:pointer;margin-bottom:8px}
+.b.g{background:var(--g)}.b.v{background:#8b5cf6}.b.dg{background:var(--d)}
+.b.sm{display:inline-block;width:auto;padding:6px 10px;font-size:.8rem;margin:0}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #f59e0b;outline-offset:1px}
+.tabs{display:flex;gap:5px;overflow-x:auto;margin-bottom:15px}
+.tb{background:#e2e8f0;border:0;padding:8px 12px;border-radius:8px;white-space:nowrap;font-weight:600;color:#475569;cursor:pointer}
+.tb.on{background:var(--p);color:#fff}
+.tr{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th,td{border:1px solid var(--bd);padding:8px;text-align:left;vertical-align:middle}
+th{background:#f1f5f9;color:var(--p)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.cc{border:2px solid var(--s);border-radius:10px;padding:15px;text-align:center;cursor:pointer}
+.cc:hover{background:#eff6ff}
+.cc h3{color:var(--p)}.cc p{font-size:.8rem;color:#64748b;margin:4px 0 8px}
+.bg{display:inline-block;padding:3px 8px;border-radius:4px;font-size:.75rem;font-weight:700}
+.gr{background:#d1fae5;color:#065f46}.r{background:#fee2e2;color:#991b1b}.y{background:#fef3c7;color:#92400e}
+.th{width:80px;height:60px;object-fit:cover;border-radius:4px;border:1px solid var(--bd);cursor:pointer;background:#e2e8f0}
+.gi{border:1px solid var(--bd);border-radius:8px;padding:5px;position:relative;font-size:.75rem;color:#64748b}
+.gi input{position:absolute;top:10px;left:10px;width:18px;height:18px}
+.gi img{width:100%;height:110px;object-fit:cover;border-radius:4px;cursor:pointer;background:#e2e8f0}
+.st{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.st div{background:#f8fafc;border:1px solid var(--bd);border-radius:8px;padding:10px;text-align:center;font-size:.8rem;color:#64748b}
+.st b{display:block;font-size:1.3rem;color:var(--p)}
+.md{display:none;position:fixed;inset:0;z-index:9;background:#000a;padding:20px;overflow:auto}
+.mc{background:#fff;margin:auto;padding:20px;border-radius:12px;max-width:700px}
+#lb{text-align:center}#lb img{max-width:100%;max-height:100%}
+li{margin:4px 0 4px 18px}
+.mt{text-align:center;color:#64748b;padding:20px}
+</style></head><body>
+<div class="c" id="app"></div>
+<div id="pm" class="md"><div class="mc"><h2>📄 Sicil dosyası önizleme</h2><div id="pv" style="max-height:60vh;overflow:auto;border:1px solid var(--bd);margin-bottom:12px"></div><button class="b g" onclick="pdfDl()">PDF indir</button><button class="b" onclick="$('pm').style.display='none'">Kapat</button></div></div>
+<div id="lb" class="md" onclick="this.style.display='none'"><img id="lbi" alt=""></div>
 <script>
-    let db = JSON.parse(localStorage.getItem('isg_multi_db')) || { companies: [] };
-    let currentCompanyId = null;
-    let selectedPersonnelIndex = null;
-    let personnelSortMode = 'alpha_asc';
+const $=i=>document.getElementById(i),
+esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),
+uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+sid=v=>String(v||'').replace(/[^\w-]/g,''),
+today=()=>new Date().toISOString().slice(0,10),
+days=d=>d?Math.ceil((new Date(d)-new Date(today()))/864e5):null,
+soon=n=>n!==null&&n<=30,
+badge=n=>n<0?`<span class="bg r">${-n} gün geçti</span>`:`<span class="bg y">${n} gün kaldı</span>`,
+TY=['Ramak Kala Olay','İş Kazası','DÖF / Uygunsuzluk'],PT=['Uygunsuzluk','Kurallara uyum'],
+cmp={a:(x,y)=>x.name.localeCompare(y.name,'tr'),z:(x,y)=>y.name.localeCompare(x.name,'tr'),n:(x,y)=>new Date(y.date||0)-new Date(x.date||0),o:(x,y)=>new Date(x.date||0)-new Date(y.date||0)};
+let db={companies:[]},cid=null,pid=null,tab='p',srt='a',eid=null;const cache=new Map();
 
-    function saveDB() {
-        localStorage.setItem('isg_multi_db', JSON.stringify(db));
-    }
+/* IndexedDB: veriler "kv", fotoğraflar "img" deposunda */
+const idb=new Promise((res,rej)=>{const r=indexedDB.open('isg',1);r.onupgradeneeded=()=>{r.result.createObjectStore('kv');r.result.createObjectStore('img')};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}),
+tx=(s,m,f)=>idb.then(d=>new Promise((res,rej)=>{const t=d.transaction(s,m),q=f(t.objectStore(s));t.oncomplete=()=>res(q&&q.result);t.onerror=t.onabort=()=>rej(t.error)})),
+get=(s,k)=>tx(s,'readonly',o=>o.get(k)),put=(s,k,v)=>tx(s,'readwrite',o=>o.put(v,k)),rm=(s,k)=>tx(s,'readwrite',o=>o.delete(k)),
+save=()=>put('kv','db',db).catch(e=>alert('Kayıt hatası: '+(e&&e.message||e)+'\nLütfen hemen yedek alın.')),
+imgSrc=async k=>{if(!cache.has(k))cache.set(k,await get('img',k));return cache.get(k)};
+function norm(){db.companies.forEach(c=>{c.id=sid(c.id)||uid();c.photos??=[];c.accidents??=[];c.personnel??=[];[...c.accidents,...c.photos].forEach(a=>{a.id=sid(a.id)||uid();if(a.img)a.img=sid(a.img)});c.personnel.forEach(p=>{p.id=sid(p.id)||uid();p.trainings??=[];p.health??=[];p.ppe??=[];p.perf??=[];p.perf.forEach(a=>{a.id=sid(a.id)||uid();if(a.img)a.img=sid(a.img)});p.health.forEach(r=>r.name??=r.type);p.ppe.forEach(r=>r.name??=r.item)})})}
+const C=()=>db.companies.find(c=>c.id==cid);
+const shrink=f=>new Promise((res,rej)=>{const u=URL.createObjectURL(f),i=new Image();i.onload=()=>{const k=Math.min(1,1280/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',.72))};i.onerror=()=>rej(new Error('Görsel okunamadı'));i.src=u}),
+storeImg=async f=>{const k=uid();await put('img',k,await shrink(f));return k};
+function hydrate(){document.querySelectorAll('img[data-i]').forEach(async m=>{m.src=(await imgSrc(m.dataset.i))||''})}
+async function zoom(k){$('lbi').src=await imgSrc(k);$('lb').style.display='block'}
 
-    function getCurrentCompany() {
-        return db.companies.find(c => c.id === currentCompanyId);
-    }
+/* Firmalar */
+function home(){cid=pid=null;const lb=+localStorage.getItem('isg_bak')||0,age=(Date.now()-lb)/864e5;
+$('app').innerHTML=`<header><h1>🏗️ İSG Saha Yönetim Asistanı</h1></header>
+${age>14?`<div class="card warn">⚠ ${lb?Math.floor(age)+' gündür':'Henüz'} yedek alınmadı. Veriler yalnızca bu cihazda saklanıyor.</div>`:''}
+<div class="card"><h2>Firma / şantiye ekle</h2><input id="cn" placeholder="Firma veya şantiye adı"><input id="cd" placeholder="Lokasyon / açıklama"><button class="b g" onclick="addC()">Oluştur</button></div>
+<div class="card"><h2>Kayıtlı firmalar</h2><div class="grid">${db.companies.map(c=>`<div class="cc" onclick="pick('${c.id}')"><h3>${esc(c.name)}</h3><p>${esc(c.desc)||'Açıklama yok'}</p><span class="bg gr">${c.personnel.length} personel</span> <span class="bg r">${c.accidents.length} kayıt</span></div>`).join('')||'<p class="mt" style="grid-column:1/-1">Henüz firma yok.</p>'}</div></div>
+<div class="card"><h2>💾 Yedekleme</h2><button class="b" onclick="backup()">Yedeği indir (.json)</button><input type="file" id="rf" accept=".json"><button class="b" onclick="restore()">Yedekten geri yükle</button></div>`}
+function addC(){const n=$('cn').value.trim();if(!n)return alert('Firma adı girin');db.companies.push({id:uid(),name:n,desc:$('cd').value.trim(),personnel:[],accidents:[],photos:[]});save();home()}
+function pick(id){cid=id;pid=null;tab='p';dash()}
+function editC(){const c=C(),n=prompt('Firma adı',c.name);if(n===null)return;const d=prompt('Açıklama',c.desc||'');if(d===null)return;c.name=n.trim()||c.name;c.desc=d.trim();save();dash()}
+function delC(){const c=C();if(!confirm('"'+c.name+'" ve tüm kayıtları kalıcı olarak silinsin mi?'))return;[...c.accidents,...c.photos,...c.personnel.flatMap(p=>p.perf||[])].forEach(x=>x.img&&rm('img',x.img));db.companies=db.companies.filter(x=>x!==c);save();home()}
+function dash(){const c=C();if(!c)return home();
+$('app').innerHTML=`<header><div><h1>🏢 ${esc(c.name)}</h1><small>${esc(c.desc)}</small></div><div><button class="b sm" onclick="editC()" title="Düzenle">✎</button> <button class="b sm dg" onclick="delC()" title="Sil">🗑</button> <button class="b sm" onclick="home()">Firmalar</button></div></header>
+<div class="tabs">${[['p','Personel'],['a','Denetim / olay'],['g','📷 Görseller'],['s','Özet']].map(([k,n])=>`<button class="tb ${tab==k?'on':''}" onclick="tab='${k}';pid=null;dash()">${n}</button>`).join('')}</div><div id="tc"></div>`;rc()}
+function rc(){const c=C();$('tc').innerHTML=tab=='p'?(pid?detail(c):plist(c)):tab=='a'?acc(c):tab=='g'?gal(c):sum(c);hydrate()}
 
-    function renderCompanyList() {
-        currentCompanyId = null;
-        selectedPersonnelIndex = null;
-        let html = `
-            <header>
-                <h1>🏗️ İSG Saha Yönetim Asistanı</h1>
-            </header>
-            <div class="card">
-                <h2>Firma / Şantiye Ekle</h2>
-                <input type="text" id="compName" placeholder="Firma veya Şantiye Adı">
-                <input type="text" id="compDesc" placeholder="Lokasyon / Açıklama">
-                <button class="btn-primary" onclick="addCompany()">Şantiye / Firma Oluştur</button>
-            </div>
-            <div class="card">
-                <h2>Kayıtlı Firmalarım / Şantiyeler</h2>
-                <div class="company-grid">
-        `;
+/* Personel */
+const warns=p=>[...p.trainings,...p.health].filter(r=>soon(days(r.exp)));
+function tcOk(t){if(!/^[1-9]\d{10}$/.test(t))return false;const d=[...t].map(Number),a=(7*(d[0]+d[2]+d[4]+d[6]+d[8])-(d[1]+d[3]+d[5]+d[7]))%10;return (a+10)%10==d[9]&&d.slice(0,10).reduce((x,y)=>x+y)%10==d[10]}
+function plist(c){const L=[...c.personnel].sort(cmp[srt]);
+return `<div class="card"><h2>Yeni personel</h2><input id="pn" placeholder="Ad soyad"><input id="pt" placeholder="TC kimlik no" inputmode="numeric" maxlength="11"><input id="pj" placeholder="Görevi / mesleği"><label>İşe giriş tarihi</label><input type="date" id="pd"><button class="b g" onclick="addP()">Kaydet</button></div>
+<div class="card"><h2>📁 Excel</h2><button class="b" onclick="expP()">Personeli Excel'e aktar</button><input type="file" id="xf" accept=".xlsx,.xls,.csv"><button class="b" onclick="impP()">Excel'den personel yükle</button><small>Sütunlar: Ad Soyad, TC, Görev, Giriş Tarihi (ilk satır başlık)</small></div>
+<div class="card"><div style="display:flex;justify-content:space-between;gap:8px"><h2>Personel (${L.length})</h2><select style="width:150px" onchange="srt=this.value;rc()">${[['a','İsim A-Z'],['z','İsim Z-A'],['n','Yeni → eski'],['o','Eski → yeni']].map(([k,n])=>`<option value="${k}"${srt==k?' selected':''}>${n}</option>`).join('')}</select></div>
+<button class="b sm dg" style="margin-bottom:10px" onclick="bulk('personnel')">Seçilenleri sil</button>
+<div class="tr"><table><tr><th><input type="checkbox" onclick="selAll(this,'personnel')"></th><th>Ad soyad</th><th>TC</th><th>Görev</th><th></th></tr>${L.map(p=>{const w=warns(p).length,o=(p.perf||[]).filter(a=>a.type==PT[0]&&!a.done).length;return `<tr><td><input type="checkbox" class="sel-personnel" value="${p.id}"></td><td style="color:var(--s);font-weight:700;cursor:pointer" onclick="pid='${p.id}';rc()">${esc(p.name)} ${w?`<span class="bg y">⚠ ${w}</span>`:''}${o?` <span class="bg r">${o} açık uygunsuzluk</span>`:''}</td><td>${esc(p.tc)}</td><td>${esc(p.job)}</td><td><button class="b sm dg" onclick="one('personnel','${p.id}')">Sil</button></td></tr>`}).join('')}</table></div></div>`}
+function addP(){const c=C(),name=$('pn').value.trim(),tc=$('pt').value.trim();if(!name)return alert('Ad soyad girin');
+if(tc&&!tcOk(tc)&&!confirm('TC kimlik numarası geçersiz görünüyor. Yine de kaydedilsin mi?'))return;
+if(tc&&c.personnel.some(p=>p.tc==tc)&&!confirm('Bu TC ile kayıtlı personel var. Yine de eklensin mi?'))return;
+c.personnel.push({id:uid(),name,tc,job:$('pj').value.trim(),date:$('pd').value,trainings:[],health:[],ppe:[]});save();rc()}
+function editP(){const p=C().personnel.find(x=>x.id==pid),n=prompt('Ad soyad',p.name);if(n===null)return;const t=prompt('TC kimlik no',p.tc);if(t===null)return;const j=prompt('Görev',p.job);if(j===null)return;p.name=n.trim()||p.name;p.tc=t.trim();p.job=j.trim();save();rc()}
+function detail(c){const p=c.personnel.find(x=>x.id==pid);if(!p){pid=null;return plist(c)}p.perf??=[];
+const sec=(f,t,ph)=>`<div class="card"><h2>${t}</h2><input id="${f}n" placeholder="${ph}"><label>Tarih</label><input type="date" id="${f}d">${f=='ppe'?'':`<label>Geçerlilik bitişi (isteğe bağlı)</label><input type="date" id="${f}e">`}<button class="b g" onclick="addSub('${f}')">Kaydet</button><ul>${p[f].map((r,i)=>`<li>${esc(r.date)} – ${esc(r.name)}${r.exp?' · bitiş '+esc(r.exp)+' '+(soon(days(r.exp))?badge(days(r.exp)):''):''} <button class="b sm dg" onclick="delSub('${f}',${i})">Sil</button></li>`).join('')}</ul></div>`;
+return `<button class="b sm" style="margin-bottom:10px" onclick="pid=null;rc()">← Listeye dön</button><div class="card" style="border:2px solid var(--p)"><h2>👤 ${esc(p.name)}</h2><p>TC: ${esc(p.tc)||'-'}</p><p>Görev: ${esc(p.job)||'-'}</p><p>İşe giriş: ${esc(p.date)||'-'}</p><div style="margin-top:12px"><button class="b" onclick="editP()">✎ Bilgileri düzenle</button><button class="b" onclick="pdfOpen()">📄 Sicil dosyası (PDF)</button></div></div>${perfCard(p)}${sec('trainings','Eğitim','Eğitim konusu')}${sec('health','Sağlık / muayene','Muayene türü')}${sec('ppe','KKD zimmet','Malzeme')}`}
+function perfCard(p){const E=p.perf.find(x=>x.id==eid),n=f=>p.perf.filter(f).length,L=[...p.perf].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+return `<div class="card" style="border:2px solid var(--d)"><h2>🦺 Saha İSG performansı</h2><div class="st" style="margin-bottom:12px"><div><b>${n(a=>a.type==PT[0]&&!a.done)}</b>Açık uygunsuzluk</div><div><b>${n(a=>a.type==PT[0]&&a.done)}</b>Giderilen</div><div><b>${n(a=>a.type==PT[1])}</b>Kurallara uyum</div></div>
+<label>Kayıt türü</label><select id="pft">${PT.map(t=>`<option${E&&E.type==t?' selected':''}>${t}</option>`).join('')}</select>
+<textarea id="pfd" rows="3" placeholder="Ne görüldü? Hangi kural ihlal edildi / uyuldu? Alınan önlem...">${esc(E?E.desc:'')}</textarea>
+<label>Tarih</label><input type="date" id="pfx" value="${esc(E?E.date:today())}">
+<label>Fotoğraf${E&&E.img?' (seçmezseniz mevcut fotoğraf kalır)':''}</label><input type="file" id="pff" accept="image/*">
+<button class="b g" onclick="savePerf()">${E?'Güncelle':'Kaydet'}</button>${E?'<button class="b" onclick="eid=null;rc()">Vazgeç</button>':''}
+<div class="tr"><table><tr><th>Görsel</th><th>Durum</th><th>Açıklama</th><th>Tarih</th><th></th></tr>${L.map(a=>`<tr><td>${a.img?`<img class="th" alt="" data-i="${a.img}" onclick="zoom('${a.img}')">`:'-'}</td><td><span class="bg ${a.type==PT[1]||a.done?'gr':'r'}">${a.type==PT[1]?'Uyum':a.done?'Giderildi':'Açık'}</span></td><td>${esc(a.desc)}</td><td>${esc(a.date)}</td><td style="white-space:nowrap"><button class="b sm" onclick="editPerf('${a.id}')">✎</button> ${a.type==PT[0]?`<button class="b sm" onclick="togglePerf('${a.id}')">${a.done?'Yeniden aç':'Giderildi'}</button> `:''}<button class="b sm dg" onclick="delPerf('${a.id}')">Sil</button></td></tr>`).join('')||'<tr><td colspan="5" class="mt">Henüz kayıt yok.</td></tr>'}</table></div></div>`}
+const P=()=>C().personnel.find(x=>x.id==pid);
+async function savePerf(){const p=P(),d=$('pfd').value.trim();if(!d)return alert('Açıklama girin');const f=$('pff').files[0],E=p.perf.find(x=>x.id==eid),a=E||{id:uid()};
+try{if(f){const k=await storeImg(f);if(a.img){rm('img',a.img);cache.delete(a.img)}a.img=k}}catch(e){return alert(e.message)}
+a.type=$('pft').value;a.desc=d;a.date=$('pfx').value||today();if(a.type==PT[1])delete a.done;if(!E)p.perf.push(a);eid=null;save();rc()}
+function editPerf(id){eid=id;rc();$('pfd').scrollIntoView({behavior:'smooth',block:'center'})}
+function togglePerf(id){const a=P().perf.find(x=>x.id==id);a.done=!a.done;save();rc()}
+function delPerf(id){if(!confirm('Bu kaydı silmek istediğinize emin misiniz?'))return;const p=P(),a=p.perf.find(x=>x.id==id);if(a.img){rm('img',a.img);cache.delete(a.img)}p.perf=p.perf.filter(x=>x!==a);if(eid==id)eid=null;save();rc()}
+function addSub(f){const p=C().personnel.find(x=>x.id==pid),n=$(f+'n').value.trim();if(!n)return;p[f].push({name:n,date:$(f+'d').value,exp:$(f+'e')?$(f+'e').value:''});save();rc()}
+function delSub(f,i){C().personnel.find(x=>x.id==pid)[f].splice(i,1);save();rc()}
 
-        if (db.companies.length === 0) {
-            html += `<p style="grid-column: 1/-1; text-align: center; color: #64748b; padding: 20px;">Henüz eklenmiş firma yok.</p>`;
-        } else {
-            db.companies.forEach(comp => {
-                let pCount = comp.personnel ? comp.personnel.length : 0;
-                let accCount = comp.accidents ? comp.accidents.length : 0;
-                html += `
-                    <div class="company-card" onclick="selectCompany('${comp.id}')">
-                        <h3>${comp.name}</h3>
-                        <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 8px;">${comp.desc || 'Açıklama yok'}</p>
-                        <span class="badge badge-green">${pCount} Personel</span>
-                        <span class="badge badge-red" style="margin-left:5px;">${accCount} Denetim</span>
-                    </div>
-                `;
-            });
-        }
-        html += `</div></div>`;
-        document.getElementById('app').innerHTML = html;
-    }
+/* Denetim / olay */
+function acc(c){return `<div class="card"><h2>Denetim / kaza / uygunsuzluk ekle</h2><select id="at">${TY.map(t=>`<option>${t}</option>`).join('')}</select><textarea id="ad" rows="3" placeholder="Olay özeti ve alınan önlem..."></textarea><label>Tarih</label><input type="date" id="ax" value="${today()}"><label>Fotoğraf</label><input type="file" id="af" accept="image/*"><button class="b g" onclick="addA()">Kayıt ekle</button></div>
+<div class="card"><h2>📁 Excel'den kayıt yükle</h2><small>Sütunlar: Tür, Açıklama, Tarih (ilk satır başlık). Fotoğraflar aktarılmaz.</small><input type="file" id="xa" accept=".xlsx,.xls,.csv" style="margin-top:8px"><button class="b" onclick="impA()">Yükle</button></div>
+<div class="card"><h2>Geçmiş (${c.accidents.length})</h2><button class="b sm dg" style="margin-bottom:10px" onclick="bulk('accidents')">Seçilenleri sil</button><div class="tr"><table><tr><th><input type="checkbox" onclick="selAll(this,'accidents')"></th><th>Görsel</th><th>Tür</th><th>Açıklama</th><th>Tarih</th><th></th></tr>${c.accidents.map(a=>`<tr><td><input type="checkbox" class="sel-accidents" value="${a.id}"></td><td>${a.img?`<img class="th" alt="" data-i="${a.img}" onclick="zoom('${a.img}')">`:'-'}</td><td><span class="bg ${(a.type||'').includes('Kaza')?'r':'gr'}">${esc(a.type)}</span></td><td>${esc(a.desc)}</td><td>${esc(a.date)}</td><td><button class="b sm" onclick="editA('${a.id}')">✎</button> <button class="b sm dg" onclick="one('accidents','${a.id}')">Sil</button></td></tr>`).join('')}</table></div></div>`}
+async function addA(){const d=$('ad').value.trim();if(!d)return alert('Açıklama girin');const f=$('af').files[0],a={id:uid(),type:$('at').value,desc:d,date:$('ax').value||today()};
+try{if(f)a.img=await storeImg(f)}catch(e){return alert(e.message)}C().accidents.push(a);save();rc()}
+function editA(id){const a=C().accidents.find(x=>x.id==id),d=prompt('Açıklama',a.desc);if(d===null||!d.trim())return;a.desc=d.trim();save();rc()}
 
-    function addCompany() {
-        let name = document.getElementById('compName').value.trim();
-        let desc = document.getElementById('compDesc').value.trim();
-        if(!name) { alert('Lütfen firma adı girin!'); return; }
-        
-        db.companies.push({
-            id: 'comp_' + Date.now(),
-            name: name,
-            desc: desc,
-            personnel: [],
-            accidents: []
-        });
-        saveDB();
-        renderCompanyList();
-    }
+/* Galeri */
+function gal(c){return `<div class="card"><h2>📷 Hızlı saha görseli</h2><input id="gd" placeholder="Açıklama / konum (örn: İskele kontrolü)"><input type="file" id="gf" accept="image/*" hidden onchange="addG(this)"><button class="b" onclick="$('gf').click()">📁 Galeriden seç</button><input type="file" id="gc" accept="image/*" capture="environment" hidden onchange="addG(this)"><button class="b v" onclick="$('gc').click()">📸 Kamera ile çek</button></div>
+<div class="card"><h2>🖼️ Galeri (${c.photos.length})</h2><button class="b sm" onclick="selAll({checked:true},'photos')">Tümünü seç</button> <button class="b sm dg" onclick="bulk('photos')">Seçilenleri sil</button><div class="grid" style="margin-top:10px;grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">${c.photos.map(x=>`<div class="gi"><input type="checkbox" class="sel-photos" value="${x.id}"><img alt="" data-i="${x.img}" onclick="zoom('${x.img}')"><p>${esc(x.date)} – ${esc(x.desc)}</p></div>`).join('')||'<p class="mt" style="grid-column:1/-1">Henüz görsel yok.</p>'}</div></div>`}
+async function addG(inp){const f=inp.files[0];if(!f)return;try{const k=await storeImg(f);C().photos.push({id:uid(),desc:$('gd').value.trim()||'Saha görseli',date:today(),img:k});save();rc()}catch(e){alert(e.message)}}
 
-    function selectCompany(id) {
-        currentCompanyId = id;
-        selectedPersonnelIndex = null;
-        renderDashboard();
-    }
+/* Özet */
+function sum(c){const W=c.personnel.flatMap(p=>warns(p).map(r=>({p,r,n:days(r.exp)}))).sort((a,b)=>a.n-b.n),n=t=>c.accidents.filter(a=>a.type==t).length;
+return `<div class="card"><h2>📊 Özet</h2><div class="st"><div><b>${c.personnel.length}</b>Personel</div><div><b>${c.accidents.length}</b>Denetim / olay</div><div><b>${n(TY[1])}</b>İş kazası</div><div><b>${n(TY[0])}</b>Ramak kala</div><div><b>${n(TY[2])}</b>DÖF / uygunsuzluk</div><div><b>${c.photos.length}</b>Saha görseli</div></div></div>
+<div class="card"><h2>⏰ Süresi dolan / yaklaşan (30 gün)</h2>${W.length?`<ul>${W.map(x=>`<li><b>${esc(x.p.name)}</b> – ${esc(x.r.name)} ${badge(x.n)}</li>`).join('')}</ul>`:'<p class="mt">Uyarı yok.</p>'}</div>`}
 
-    let currentTab = 'personnel';
+/* Silme */
+function selAll(el,k){document.querySelectorAll('.sel-'+k).forEach(x=>x.checked=el.checked)}
+function bulk(k){const s=[...document.querySelectorAll('.sel-'+k+':checked')].map(x=>x.value);if(!s.length)return alert('Önce kayıt seçin');if(confirm(s.length+' kayıt silinsin mi?'))drop(k,s)}
+function one(k,id){if(confirm('Silmek istediğinize emin misiniz?'))drop(k,[id])}
+function drop(k,ids){const c=C(),S=new Set(ids);c[k]=c[k].filter(x=>{if(!S.has(x.id))return true;[x,...(x.perf||[])].forEach(y=>{if(y.img){rm('img',y.img);cache.delete(y.img)}});return false});save();rc()}
 
-    function renderDashboard() {
-        let comp = getCurrentCompany();
-        if(!comp) { renderCompanyList(); return; }
+/* Excel */
+const xd=v=>{if(v instanceof Date){v=new Date(v.getTime()+3e4);return v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0')}return String(v??'').trim()},
+rows=f=>new Promise((res,rej)=>{if(!f)return rej(new Error('Önce dosya seçin'));const r=new FileReader();r.onload=e=>{try{const w=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});res(XLSX.utils.sheet_to_json(w.Sheets[w.SheetNames[0]],{header:1,raw:true}).slice(1))}catch(x){rej(x)}};r.onerror=()=>rej(new Error('Dosya okunamadı'));r.readAsArrayBuffer(f)});
+function expP(){const c=C();if(!c.personnel.length)return alert('Dışa aktarılacak personel yok');const w=XLSX.utils.book_new();XLSX.utils.book_append_sheet(w,XLSX.utils.json_to_sheet(c.personnel.map(p=>({'Ad Soyad':p.name,'TC Kimlik':p.tc,'Görev':p.job,'Giriş Tarihi':p.date}))),'Personel');XLSX.writeFile(w,c.name.replace(/[\\\/:*?"<>|]/g,'_')+'_personel.xlsx')}
+async function impP(){try{const R=await rows($('xf').files[0]),c=C();let n=0;R.forEach(r=>{if(r&&r[0]){c.personnel.push({id:uid(),name:xd(r[0]),tc:xd(r[1]),job:xd(r[2]),date:xd(r[3]),trainings:[],health:[],ppe:[]});n++}});save();rc();alert(n+' personel eklendi.')}catch(e){alert('Hata: '+e.message)}}
+async function impA(){try{const R=await rows($('xa').files[0]),c=C();let n=0;R.forEach(r=>{if(r&&(r[0]||r[1])){const t=xd(r[0]);c.accidents.push({id:uid(),type:TY.includes(t)?t:TY[2],desc:xd(r[1])||t,date:xd(r[2])||today()});n++}});save();rc();alert(n+' kayıt eklendi.')}catch(e){alert('Hata: '+e.message)}}
 
-        let html = `
-            <header>
-                <div>
-                    <h1>🏢 ${comp.name}</h1>
-                    <small style="opacity: 0.8;">${comp.desc || ''}</small>
-                </div>
-                <button class="btn-back" onclick="renderCompanyList()">Firmalara Dön</button>
-            </header>
+/* PDF */
+function pdfHtml(){const c=C(),p=c.personnel.find(x=>x.id==pid),li=r=>`<li>${esc(r.date)} – ${esc(r.name)}${r.exp?' (geçerlilik: '+esc(r.exp)+')':''}</li>`;
+return `<div style="padding:20px;color:#000;background:#fff;font-size:.9rem"><div style="text-align:center;border-bottom:2px solid #1e3a8a;padding-bottom:10px;margin-bottom:15px"><h2 style="color:#1e3a8a;border:0">İSG PERSONEL SİCİL DOSYASI</h2><p style="font-size:.85rem;color:#555">Şantiye: ${esc(c.name)}</p></div><p><b>Ad soyad:</b> ${esc(p.name)}</p><p><b>TC:</b> ${esc(p.tc)||'-'}</p><p><b>Görev:</b> ${esc(p.job)||'-'}</p><p><b>İşe giriş:</b> ${esc(p.date)||'-'}</p>${[['Verilen eğitimler','trainings'],['Sağlık muayeneleri','health'],['KKD zimmet geçmişi','ppe']].map(([t,f])=>`<h3 style="color:#1e3a8a;margin:14px 0 4px">${t}</h3><ul>${p[f].length?p[f].map(li).join(''):'<li>Kayıt yok</li>'}</ul>`).join('')}<h3 style="color:#1e3a8a;margin:14px 0 4px">Saha İSG performansı</h3><ul>${(p.perf||[]).length?p.perf.map(a=>`<li>${esc(a.date)} – [${esc(a.type)}${a.type==PT[0]?(a.done?', giderildi':', açık'):''}] ${esc(a.desc)}</li>`).join(''):'<li>Kayıt yok</li>'}</ul></div>`}
+function pdfOpen(){$('pv').innerHTML=pdfHtml();$('pm').style.display='block'}
+function pdfDl(){const p=C().personnel.find(x=>x.id==pid),e=document.createElement('div');e.innerHTML=pdfHtml();html2pdf().from(e).set({margin:10,filename:p.name.replace(/\s+/g,'_')+'_isg_sicil.pdf',image:{type:'jpeg',quality:.98},html2canvas:{scale:2},jsPDF:{unit:'mm',format:'a4'}}).save().then(()=>$('pm').style.display='none')}
 
-            <div class="tabs">
-                <button class="tab-btn ${currentTab==='personnel'?'active':''}" onclick="switchTab('personnel')">Personel Listesi</button>
-                <button class="tab-btn ${currentTab==='accidents'?'active':''}" onclick="switchTab('accidents')">Denetim / Olay</button>
-                <button class="tab-btn ${currentTab==='gallery'?'active':''}" onclick="switchTab('gallery')">📷 Saha Görselleri</button>
-                <button class="tab-btn ${currentTab==='reports'?'active':''}" onclick="switchTab('reports')">Özet</button>
-            </div>
-            
-            <div id="tabContent"></div>
-        `;
-        document.getElementById('app').innerHTML = html;
-        renderTabContent();
-    }
+/* Yedek */
+function dl(b,n){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5e3)}
+async function backup(){try{const ks=await tx('img','readonly',o=>o.getAllKeys()),vs=await tx('img','readonly',o=>o.getAll()),im={};ks.forEach((k,i)=>im[k]=vs[i]);dl(new Blob([JSON.stringify({v:2,db,im})],{type:'application/json'}),'isg_yedek_'+today()+'.json');localStorage.setItem('isg_bak',Date.now());home()}catch(e){alert('Yedek alınamadı: '+e.message)}}
+async function restore(){const f=$('rf').files[0];if(!f)return alert('Önce yedek dosyası seçin');try{const j=JSON.parse(await f.text());if(!j.db||!Array.isArray(j.db.companies))throw Error('Geçersiz yedek dosyası');if(!confirm('Mevcut tüm veriler silinip yedekle değiştirilecek. Devam edilsin mi?'))return;await tx('img','readwrite',o=>o.clear());for(const k in j.im||{})await put('img',sid(k),j.im[k]);db=j.db;norm();cache.clear();await save();home()}catch(e){alert('Geri yükleme hatası: '+e.message)}}
 
-    function switchTab(tab) {
-        currentTab = tab;
-        selectedPersonnelIndex = null;
-        renderDashboard();
-    }
-
-    function renderTabContent() {
-        let comp = getCurrentCompany();
-        let content = '';
-
-        if (currentTab === 'personnel') {
-            if (selectedPersonnelIndex !== null && comp.personnel[selectedPersonnelIndex]) {
-                // PERSONEL DETAY VE SİCİL EĞİTİM SAĞLIK ZİMMET PANELI
-                let p = comp.personnel[selectedPersonnelIndex];
-                if(!p.trainings) p.trainings = [];
-                if(!p.health) p.health = [];
-                if(!p.ppe) p.ppe = [];
-
-                content = `
-                    <button class="btn-back" style="margin-bottom:10px;" onclick="selectedPersonnelIndex=null; renderTabContent();">← Personel Listesine Dön</button>
-                    <div class="card" style="border: 2px solid var(--primary);">
-                        <h2>👤 ${p.name} - Personel Sicil Detayı</h2>
-                        <p><strong>TC Kimlik:</strong> ${p.tc || 'Belirtilmemiş'}</p>
-                        <p><strong>Görevi:</strong> ${p.job || 'Belirtilmemiş'}</p>
-                        <p><strong>İşe Giriş Tarihi:</strong> ${p.date || 'Belirtilmemiş'}</p>
-                        <div style="margin-top:15px; display:flex; gap:10px;">
-                            <button class="btn-primary" style="background:#2563eb;" onclick="openPdfPreview()">📄 İSG Sicil Dosyası İndir (Önizle)</button>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <h2>Eğitim Ekle</h2>
-                        <input type="text" id="ptName" placeholder="Eğitim Konusu (Örn: Temel İSG)">
-                        <input type="date" id="ptDate">
-                        <button class="btn-primary" onclick="addPersonnelSub('trainings')">Eğitim Kaydet</button>
-                        <h4 style="margin-top:10px; font-size:0.9rem; color:var(--primary);">Verilen Eğitimler (${p.trainings.length})</h4>
-                        <ul>${p.trainings.map((t, idx) => `<li>${t.date} -${t.name} <button class="btn-danger" style="padding:2px 5px; font-size:0.7rem;" onclick="deletePersonnelSub('trainings', ${idx})">Sil</button></li>`).join('')}</ul>
-                    </div>
-
-                    <div class="card">
-                        <h2>Sağlık / Muayene Ekle</h2>
-                        <input type="text" id="phType" placeholder="Muayene Türü (Örn: İşe Giriş Muayenesi)">
-                        <input type="date" id="phDate">
-                        <button class="btn-primary" onclick="addPersonnelSub('health')">Sağlık Kaydet</button>
-                        <h4 style="margin-top:10px; font-size:0.9rem; color:var(--primary);">Sağlık Geçmişi (${p.health.length})</h4>
-                        <ul>${p.health.map((h, idx) => `<li>${h.date} -${h.type} <button class="btn-danger" style="padding:2px 5px; font-size:0.7rem;" onclick="deletePersonnelSub('health', ${idx})">Sil</button></li>`).join('')}</ul>
-                    </div>
-
-                    <div class="card">
-                        <h2>KKD Zimmet Ekle</h2>
-                        <input type="text" id="peItem" placeholder="Malzeme (Örn: Baret, Çelik Burunlu Ayakkabı)">
-                        <input type="date" id="peDate">
-                        <button class="btn-primary" onclick="addPersonnelSub('ppe')">Zimmetle</button>
-                        <h4 style="margin-top:10px; font-size:0.9rem; color:var(--primary);">Zimmetli Ekipmanlar (${p.ppe.length})</h4>
-                        <ul>${p.ppe.map((e, idx) => `<li>${e.date} -${e.item} <button class="btn-danger" style="padding:2px 5px; font-size:0.7rem;" onclick="deletePersonnelSub('ppe', ${idx})">Sil</button></li>`).join('')}</ul>
-                    </div>
-                `;
-            } else {
-                // PERSONEL LİSTESİ VE FİLTRELEME
-                let sortedPersonnel = [...comp.personnel];
-                if (personnelSortMode === 'alpha_asc') {
-                    sortedPersonnel.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
-                } else if (personnelSortMode === 'alpha_desc') {
-                    sortedPersonnel.sort((a, b) => b.name.localeCompare(a.name, 'tr'));
-                } else if (personnelSortMode === 'date_new') {
-                    sortedPersonnel.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-                } else if (personnelSortMode === 'date_old') {
-                    sortedPersonnel.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
-                }
-
-                content = `
-                    <div class="card">
-                        <h2>Yeni Personel Ekle</h2>
-                        <input type="text" id="pName" placeholder="Ad Soyad">
-                        <input type="text" id="pTC" placeholder="TC Kimlik No">
-                        <input type="text" id="pJob" placeholder="Görevi / Mesleği">
-                        <input type="date" id="pDate">
-                        <button class="btn-primary" onclick="addPersonnel()">Personeli Kaydet</button>
-                    </div>
-                    <div class="card" style="border: 2px dashed var(--secondary);">
-                        <h2>📁 Excel / CSV Personel İşlemleri</h2>
-                        <button class="btn-excel" onclick="exportPersonnelExcel()">Personeli Excel'e Aktar (.xlsx)</button>
-                        <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="margin-top:10px; margin-bottom:5px;">
-                        <button class="btn-primary" style="background:#2563eb;" onclick="importPersonnelExcel()">Excel'den Personel Yükle</button>
-                    </div>
-                    <div class="card">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                            <h2>Personel Listesi (${comp.personnel.length})</h2>
-                            <select id="sortSelect" onchange="changeSortMode(this.value)" style="width:160px; margin:0; padding:5px;">
-                                <option value="alpha_asc" ${personnelSortMode==='alpha_asc'?'selected':''}>İsim (A-Z)</option>
-                                <option value="alpha_desc" ${personnelSortMode==='alpha_desc'?'selected':''}>İsim (Z-A)</option>
-                                <option value="date_new" ${personnelSortMode==='date_new'?'selected':''}>Yeniden Eskiye</option>
-                                <option value="date_old" ${personnelSortMode==='date_old'?'selected':''}>Eskiden Yeniye</option>
-                            </select>
-                        </div>
-                        ${comp.personnel.length > 0 ? `<button class="btn-bulk-delete" onclick="bulkDelete('personnel')">Seçilenleri Sil</button>` : ''}
-                        <div class="table-responsive">
-                            <table>
-                                <tr>
-                                    <th style="width:30px;"><input type="checkbox" id="selectAll-personnel" onclick="toggleSelectAll('personnel')"></th>
-                                    <th>Ad Soyad</th><th>TC</th><th>Görev</th><th>İşlem</th>
-                                </tr>
-                                ${sortedPersonnel.map((p, originalIdx) => {
-                                    let realIdx = comp.personnel.indexOf(p);
-                                    return `
-                                        <tr>
-                                            <td><input type="checkbox" class="select-personnel" value="${realIdx}"></td>
-                                            <td style="cursor:pointer; color:var(--secondary); font-weight:bold;" onclick="selectPersonnelDetail(${realIdx})">${p.name}</td>
-                                            <td>${p.tc}</td><td>${p.job}</td>
-                                            <td><button class="btn-danger" onclick="deleteItem('personnel', ${realIdx})">Sil</button></td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </table>
-                        </div>
-                    </div>
-                `;
-            }
-        } else if (currentTab === 'accidents') {
-            content = `
-                <div class="card">
-                    <h2>Denetim / Kaza / Uygunsuzluk Ekle</h2>
-                    <select id="accType"><option value="Ramak Kala Olay">Ramak Kala Olay</option><option value="İş Kazası">İş Kazası</option><option value="DÖF / Uygunsuzluk">DÖF / Uygunsuzluk</option></select>
-                    <textarea id="accDesc" placeholder="Olay özeti ve alınan önlem..." rows="3"></textarea>
-                    <input type="date" id="accDate">
-                    <label style="font-size:0.85rem; font-weight:bold; color:#64748b;">Fotoğraf Yükle:</label>
-                    <input type="file" id="accImgFile" accept="image/*" style="margin-top:5px;">
-                    <button class="btn-primary" onclick="addAccidentWithImage()">Kayıt Ekle</button>
-                </div>
-                
-                <div class="card" style="border: 2px dashed var(--secondary);">
-                    <h2>📁 Excel Raporu İçeri Aktar (Görseller Dahil)</h2>
-                    <p style="font-size:0.85rem; color:#64748b; margin-bottom:10px;">İçinde fotoğraflar bulunan Excel denetim raporunuzu seçin:</p>
-                    <input type="file" id="excelReportFile" accept=".xlsx, .xls">
-                    <button class="btn-primary" style="background:#2563eb; margin-top:5px;" onclick="importExcelWithImages()">Excel Raporunu ve Görselleri Yükle</button>
-                </div>
-
-                <div class="card">
-                    <h2>Denetim & Olay Geçmişi (${comp.accidents.length})</h2>
-                    ${comp.accidents.length > 0 ? `<button class="btn-bulk-delete" onclick="bulkDelete('accidents')">Seçilenleri Sil</button>` : ''}
-                    <div class="table-responsive">
-                        <table>
-                            <tr>
-                                <th style="width:30px;"><input type="checkbox" id="selectAll-accidents" onclick="toggleSelectAll('accidents')"></th>
-                                <th>Görsel</th><th>Tür</th><th>Açıklama</th><th>Tarih</th><th>İşlem</th>
-                            </tr>
-                            ${comp.accidents.map((a, i) => `
-                                <tr>
-                                    <td><input type="checkbox" class="select-accidents" value="${i}"></td>
-                                    <td>${a.img ? `<img src="${a.img}" class="report-img" onclick="window.open('${a.img}')">` : 'Yok'}</td>
-                                    <td><span class="badge ${a.type.includes('Kazası')?'badge-red':'badge-green'}">${a.type}</span></td>
-                                    <td>${a.desc}</td>
-                                    <td>${a.date}</td>
-                                    <td><button class="btn-danger" onclick="deleteItem('accidents', ${i})">Sil</button></td>
-                                </tr>
-                            `).join('')}
-                        </table>
-                    </div>
-                </div>
-            `;
-        } else if (currentTab === 'gallery') {
-            let imgList = comp.accidents.filter(a => a.img && a.img.trim() !== '');
-            content = `
-                <div class="card">
-                    <h2>📷 Hızlı Saha Görseli Ekle</h2>
-                    <input type="text" id="galleryDesc" placeholder="Görsel Açıklaması / Konum (Örn: İskele kontrolü)">
-                    
-                    <input type="file" id="galleryFile" accept="image/*" style="display:none;" onchange="handleGalleryFile(this)">
-                    <button class="btn-primary" onclick="document.getElementById('galleryFile').click()">📁 Galeriden Fotoğraf Seç</button>
-                    
-                    <input type="file" id="galleryCamera" accept="image/*" capture="environment" style="display:none;" onchange="handleGalleryFile(this)">
-                    <button class="btn-camera" onclick="document.getElementById('galleryCamera').click()">📸 Kamera ile Anlık Çek</button>
-                </div>
-
-                <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <h2>🖼️ Saha Görselleri Galerisi (${imgList.length})</h2>
-                        ${imgList.length > 0 ? `<button class="btn-bulk-delete" onclick="bulkDeleteGallery()" style="margin:0;">Seçilenleri Sil</button>` : ''}
-                    </div>
-                    ${imgList.length === 0 ? '<p style="text-align:center; color:#64748b; padding:20px;">Henüz görsel eklenmemiş.</p>' : `
-                        <div class="gallery-grid">
-                            ${comp.accidents.map((item, originalIndex) => {
-                                if (!item.img) return '';
-                                return `
-                                    <div class="gallery-item">
-                                        <input type="checkbox" class="select-gallery" value="${originalIndex}">
-                                        <img src="${item.img}" onclick="window.open('${item.img}')" title="Büyütmek için tıklayın">
-                                        <p>${item.date} - ${item.desc || 'Açıklama yok'}</p>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    `}
-                </div>
-            `;
-        } else if (currentTab === 'reports') {
-            content = `
-                <div class="card">
-                    <h2>📊 Şantiye Genel Özet Raporu</h2>
-                    <div class="stats-box">
-                        <div class="stat-card"><h4>Toplam Personel</h4><p>${comp.personnel.length}</p></div>
-                        <div class="stat-card"><h4>Denetim / Olay</h4><p>${comp.accidents.length}</p></div>
-                    </div>
-                </div>
-            `;
-        }
-
-        document.getElementById('tabContent').innerHTML = content;
-    }
-
-    function changeSortMode(mode) {
-        personnelSortMode = mode;
-        renderTabContent();
-    }
-
-    function selectPersonnelDetail(index) {
-        selectedPersonnelIndex = index;
-        renderTabContent();
-    }
-
-    function addPersonnelSub(type) {
-        let comp = getCurrentCompany();
-        let p = comp.personnel[selectedPersonnelIndex];
-        if (type === 'trainings') {
-            let name = document.getElementById('ptName').value.trim();
-            let date = document.getElementById('ptDate').value;
-            if(!name) return;
-            p.trainings.push({ name, date });
-        } else if (type === 'health') {
-            let typeName = document.getElementById('phType').value.trim();
-            let date = document.getElementById('phDate').value;
-            if(!typeName) return;
-            p.health.push({ type: typeName, date });
-        } else if (type === 'ppe') {
-            let item = document.getElementById('peItem').value.trim();
-            let date = document.getElementById('peDate').value;
-            if(!item) return;
-            p.ppe.push({ item, date });
-        }
-        saveDB();
-        renderTabContent();
-    }
-
-    function deletePersonnelSub(type, idx) {
-        let comp = getCurrentCompany();
-        let p = comp.personnel[selectedPersonnelIndex];
-        p[type].splice(idx, 1);
-        saveDB();
-        renderTabContent();
-    }
-
-    // PDF ÖNİZLEME VE İNDİRME FONKSİYONLARI
-    function generatePdfHtmlString() {
-        let comp = getCurrentCompany();
-        let p = comp.personnel[selectedPersonnelIndex];
-        return `
-            <div id="pdfExportContent" style="padding: 20px; font-family: sans-serif; color: #000; background: #fff;">
-                <div style="text-align: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 15px;">
-                    <h2 style="color: #1e3a8a; margin: 0;">İSG PERSONEL SİCİL DOSYASI</h2>
-                    <p style="font-size: 0.85rem; color: #555; margin-top: 4px;">Şantiye: ${comp.name}</p>
-                </div>
-                <div style="margin-bottom: 15px; font-size: 0.9rem;">
-                    <p><strong>Ad Soyad:</strong> ${p.name}</p>
-                    <p><strong>TC Kimlik No:</strong> ${p.tc || '-'}</p>
-                    <p><strong>Görevi:</strong> ${p.job || '-'}</p>
-                    <p><strong>İşe Giriş Tarihi:</strong> ${p.date || '-'}</p>
-                </div>
-                <hr style="border:0; border-top:1px solid #ccc; margin: 15px 0;">
-                <h3 style="font-size: 1rem; color: #1e3a8a; margin-bottom: 5px;">Verilen Eğitimler</h3>
-                <ul style="font-size: 0.85rem; padding-left: 20px; margin-bottom: 15px;">
-                    ${p.trainings && p.trainings.length > 0 ? p.trainings.map(t => `<li>${t.date} -${t.name}</li>`).join('') : '<li>Kayıt yok</li>'}
-                </ul>
-                <h3 style="font-size: 1rem; color: #1e3a8a; margin-bottom: 5px;">Sağlık Muayeneleri</h3>
-                <ul style="font-size: 0.85rem; padding-left: 20px; margin-bottom: 15px;">
-                    ${p.health && p.health.length > 0 ? p.health.map(h => `<li>${h.date} -${h.type}</li>`).join('') : '<li>Kayıt yok</li>'}
-                </ul>
-                <h3 style="font-size: 1rem; color: #1e3a8a; margin-bottom: 5px;">KKD Zimmet Geçmişi</h3>
-                <ul style="font-size: 0.85rem; padding-left: 20px; margin-bottom: 15px;">
-                    ${p.ppe && p.ppe.length > 0 ? p.ppe.map(e => `<li>${e.date} -${e.item}</li>`).join('') : '<li>Kayıt yok</li>'}
-                </ul>
-            </div>
-        `;
-    }
-
-    function openPdfPreview() {
-        document.getElementById('pdfPreviewContainer').innerHTML = generatePdfHtmlString();
-        document.getElementById('pdfModal').style.display = 'block';
-    }
-
-    function closePdfModal() {
-        document.getElementById('pdfModal').style.display = 'none';
-    }
-
-    function downloadPdfFinal() {
-        let comp = getCurrentCompany();
-        let p = comp.personnel[selectedPersonnelIndex];
-        let element = document.createElement('div');
-        element.innerHTML = generatePdfHtmlString();
-        
-        let opt = {
-            margin:       10,
-            filename:     `${p.name.replace(/\s+/g, '_')}_isg_sicil.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2 },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        html2pdf().from(element).set(opt).save().then(() => {
-            closePdfModal();
-        });
-    }
-
-    function handleGalleryFile(input) {
-        if (input.files && input.files[0]) {
-            let reader = new FileReader();
-            let descInput = document.getElementById('galleryDesc');
-            let descText = descInput ? descInput.value.trim() : '';
-            let today = new Date().toISOString().split('T')[0];
-
-            reader.onload = function(e) {
-                let comp = getCurrentCompany();
-                comp.accidents.push({
-                    type: 'DÖF / Uygunsuzluk',
-                    desc: descText || 'Saha Görseli',
-                    date: today,
-                    img: e.target.result
-                });
-                saveDB();
-                renderTabContent();
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    function toggleSelectAll(listName) {
-        let masterCheckbox = document.getElementById(`selectAll-${listName}`);
-        let checkboxes = document.querySelectorAll(`.select-${listName}`);
-        checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
-    }
-
-    function bulkDelete(listName) {
-        let checkboxes = document.querySelectorAll(`.select-${listName}:checked`);
-        if(checkboxes.length === 0) { alert('Lütfen silinecek en az bir kayıt seçin!'); return; }
-        
-        if(confirm(`Seçilen ${checkboxes.length} kaydı silmek istediğinize emin misiniz?`)) {
-            let comp = getCurrentCompany();
-            let indices = Array.from(checkboxes).map(cb => parseInt(cb.value)).sort((a, b) => b - a);
-            indices.forEach(index => { comp[listName].splice(index, 1); });
-            saveDB();
-            renderTabContent();
-        }
-    }
-
-    function bulkDeleteGallery() {
-        let checkboxes = document.querySelectorAll('.select-gallery:checked');
-        if(checkboxes.length === 0) { alert('Lütfen silinecek en az bir görsel seçin!'); return; }
-        
-        if(confirm(`Seçilen ${checkboxes.length} görseli silmek istediğinize emin misiniz?`)) {
-            let comp = getCurrentCompany();
-            let indices = Array.from(checkboxes).map(cb => parseInt(cb.value)).sort((a, b) => b - a);
-            indices.forEach(index => { comp.accidents.splice(index, 1); });
-            saveDB();
-            renderTabContent();
-        }
-    }
-
-    async function importExcelWithImages() {
-        let fileInput = document.getElementById('excelReportFile');
-        if(fileInput.files.length === 0) { alert('Lütfen bir Excel dosyası seçin!'); return; }
-        
-        let file = fileInput.files[0];
-        let reader = new FileReader();
-
-        reader.onload = async function(e) {
-            try {
-                let data = new Uint8Array(e.target.result);
-                let workbook = XLSX.read(data, { type: 'array' });
-                let worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                let jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-                let zip = new JSZip();
-                let zipContent = await zip.loadAsync(file);
-                let mediaFiles = Object.keys(zipContent.files).filter(filename => filename.startsWith('xl/media/'));
-                
-                let extractedImages = [];
-                for (let path of mediaFiles) {
-                    let imgData = await zipContent.files[path].async('base64');
-                    let ext = path.split('.').pop().toLowerCase();
-                    let mime = ext === 'png' ? 'image/png' : 'image/jpeg';
-                    extractedImages.push(`data:${mime};base64,${imgData}`);
-                }
-
-                let comp = getCurrentCompany();
-                let count = 0;
-
-                for (let i = 1; i < jsonRows.length; i++) {
-                    let row = jsonRows[i];
-                    if(!row || row.length === 0) continue;
-
-                    let desc = row.join(' - ');
-                    let date = new Date().toISOString().split('T')[0];
-                    let img = extractedImages[count] || '';
-
-                    if(desc.trim()) {
-                        comp.accidents.push({ type: 'DÖF / Uygunsuzluk', desc: desc, date: date, img: img });
-                        count++;
-                    }
-                }
-
-                saveDB();
-                renderTabContent();
-                alert(`${count} adet denetim kaydı ve ${extractedImages.length} adet görsel başarıyla yüklendi!`);
-            } catch (error) {
-                console.error(error);
-                alert('Dosya işlenirken bir hata oluştu!');
-            }
-        };
-        reader.readAsArrayBuffer(file);
-    }
-
-    function addAccidentWithImage() {
-        let type = document.getElementById('accType').value;
-        let desc = document.getElementById('accDesc').value;
-        let date = document.getElementById('accDate').value;
-        let fileInput = document.getElementById('accImgFile');
-        if(!desc) { alert('Lütfen açıklama girin'); return; }
-
-        let comp = getCurrentCompany();
-        if (fileInput.files && fileInput.files[0]) {
-            let reader = new FileReader();
-            reader.onload = function(e) {
-                comp.accidents.push({ type, desc, date, img: e.target.result });
-                saveDB();
-                renderTabContent();
-            };
-            reader.readAsDataURL(fileInput.files[0]);
-        } else {
-            comp.accidents.push({ type, desc, date, img: '' });
-            saveDB();
-            renderTabContent();
-        }
-    }
-
-    function exportPersonnelExcel() {
-        let comp = getCurrentCompany();
-        if(comp.personnel.length === 0) { alert('Dışa aktarılacak personel yok!'); return; }
-        let data = comp.personnel.map(p => ({ "Ad Soyad": p.name, "TC Kimlik": p.tc, "Görev": p.job, "Giriş Tarihi": p.date }));
-        let worksheet = XLSX.utils.json_to_sheet(data);
-        let workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Personel");
-        XLSX.writeFile(workbook, `${comp.name}_personel.xlsx`);
-    }
-
-    function importPersonnelExcel() {
-        let fileInput = document.getElementById('excelFile');
-        if(fileInput.files.length === 0) { alert('Dosya seçin!'); return; }
-        let reader = new FileReader();
-        reader.onload = function(e) {
-            let data = new Uint8Array(e.target.result);
-            let workbook = XLSX.read(data, { type: 'array' });
-            let jsonRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
-            let comp = getCurrentCompany();
-            let count = 0;
-            for(let i = 1; i < jsonRows.length; i++) {
-                let row = jsonRows[i];
-                if(row && row[0]) {
-                    comp.personnel.push({ name: String(row[0]), tc: String(row[1]||''), job: String(row[2]||''), date: String(row[3]||''), trainings: [], health: [], ppe: [] });
-                    count++;
-                }
-            }
-            saveDB();
-            renderTabContent();
-            alert(`${count} personel eklendi.`);
-        };
-        reader.readAsArrayBuffer(file);
-    }
-
-    function addPersonnel() {
-        let name = document.getElementById('pName').value.trim();
-        let tc = document.getElementById('pTC').value.trim();
-        let job = document.getElementById('pJob').value.trim();
-        let date = document.getElementById('pDate').value;
-        if(!name) return;
-        getCurrentCompany().personnel.push({ name, tc, job, date, trainings: [], health: [], ppe: [] });
-        saveDB();
-        renderTabContent();
-    }
-
-    function deleteItem(listName, index) {
-        if(confirm('Silmek istediğinize emin misiniz?')) {
-            getCurrentCompany()[listName].splice(index, 1);
-            saveDB();
-            renderTabContent();
-        }
-    }
-
-    renderCompanyList();
-</script>
-
-</body>
-</html>
+/* Başlangıç: eski localStorage verisi varsa taşınır (silinmez) */
+(async()=>{try{db=await get('kv','db');if(!db){db={companies:[]};const o=JSON.parse(localStorage.getItem('isg_multi_db')||'null');if(o&&o.companies){for(const c of o.companies){for(const a of c.accidents||[])if(a.img){const k=uid();await put('img',k,a.img);a.img=k}db.companies.push(c)}norm();await save()}}norm();navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){alert('Depolama açılamadı: '+e)}home()})();
+</script></body></html>
