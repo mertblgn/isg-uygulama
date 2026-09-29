@@ -3,415 +3,728 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İSG Şantiye Yönetim ve Gözlem Sistemi</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>İSG Saha Yönetim Asistanı - Final</title>
+    <!-- SheetJS (XLSX) Kütüphanesi -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- html2pdf.js Kütüphanesi -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #3b82f6;
+            --accent: #f59e0b;
+            --danger: #ef4444;
+            --success: #10b981;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #cbd5e1;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 10px; }
+        .container { max-width: 800px; margin: 0 auto; padding-bottom: 50px; }
+        
+        header { background: var(--primary); color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        header h1 { font-size: 1.1rem; }
+        .btn-back { background: var(--secondary); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
+        
+        .card { background: var(--card-bg); border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+        h2 { font-size: 1.1rem; color: var(--primary); margin-bottom: 12px; border-bottom: 2px solid var(--bg); padding-bottom: 6px; }
+        
+        input, select, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; }
+        button.btn-primary { background: var(--success); color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 8px; }
+        button.btn-camera { background: #8b5cf6; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 8px; }
+        button.btn-excel { background: #059669; color: white; border: none; padding: 10px; width: 100%; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; margin-bottom: 8px; }
+        button.btn-danger { background: var(--danger); color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+        button.btn-bulk-delete { background: var(--danger); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold; margin-bottom: 10px; }
+        
+        .tabs { display: flex; gap: 5px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; }
+        .tab-btn { background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; font-size: 0.85rem; font-weight: 600; color: #475569; }
+        .tab-btn.active { background: var(--primary); color: white; }
+        
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 5px; }
+        th, td { border: 1px solid var(--border); padding: 8px; text-align: left; vertical-align: middle; }
+        th { background: #f1f5f9; color: var(--primary); }
+        
+        .company-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+        .company-card { background: white; border: 2px solid var(--secondary); border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .company-card:hover { background: #eff6ff; transform: translateY(-2px); }
+        .company-card h3 { color: var(--primary); margin-bottom: 5px; font-size: 1.1rem; }
+        
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .badge-green { background: #d1fae5; color: #065f46; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+        
+        .report-img { width: 80px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); cursor: pointer; }
+        
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
+        .gallery-item { background: white; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: center; padding: 5px; position: relative; }
+        .gallery-item input[type="checkbox"] { position: absolute; top: 8px; left: 8px; width: 18px; height: 18px; }
+        .gallery-item img { width: 100%; height: 100px; object-fit: cover; cursor: pointer; border-radius: 4px; }
+        .gallery-item p { font-size: 0.75rem; color: #64748b; padding: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .stats-box { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
+        .stat-card { background: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: 8px; text-align: center; }
+        .stat-card h4 { font-size: 0.8rem; color: #64748b; }
+        .stat-card p { font-size: 1.2rem; font-weight: bold; color: var(--primary); margin-top: 5px; }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); padding: 20px; }
+        .modal-content { background-color: #fff; margin: auto; padding: 20px; border-radius: 12px; width: 100%; max-width: 700px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .close-modal { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close-modal:hover { color: black; }
+    </style>
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+<body>
 
-    <!-- Header -->
-    <header class="bg-slate-900 text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="flex items-center space-x-3">
-                <div class="bg-amber-500 p-2.5 rounded-lg text-slate-900 font-bold text-xl shadow">
-                    <i class="fa-solid fa-hard-hat"></i>
-                </div>
-                <div>
-                    <h1 class="text-xl font-bold tracking-wide">İSG Şantiye Yönetim Portalı</h1>
-                    <p class="text-xs text-slate-400">TOKİ & İnşaat Projeleri İSG Takip Sistemi</p>
-                </div>
-            </div>
-            <nav class="flex space-x-2 bg-slate-800 p-1 rounded-lg border border-slate-700">
-                <button onclick="switchTab('personnel')" id="btn-personnel" class="px-4 py-2 rounded-md text-sm font-medium transition bg-amber-500 text-slate-900 shadow">
-                    <i class="fa-solid fa-users mr-2"></i>Personel & Eğitim
-                </button>
-                <button onclick="switchTab('audit')" id="btn-audit" class="px-4 py-2 rounded-md text-sm font-medium transition text-slate-300 hover:text-white">
-                    <i class="fa-solid fa-clipboard-check mr-2"></i>İSG Gözlem Formu
-                </button>
-            </nav>
-        </div>
-    </header>
+<div class="container" id="app"></div>
 
-    <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
-
-        <!-- TAB 1: PERSONNEL & TRAINING -->
-        <section id="tab-personnel" class="space-y-6">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <div>
-                    <h2 class="text-lg font-bold text-slate-900">Şantiye Personel Listesi</h2>
-                    <p class="text-sm text-slate-500">Çalışanların İSG eğitim durumları ve sicil özetleri.</p>
-                </div>
-                <div class="flex items-center gap-3 w-full md:w-auto">
-                    <div class="relative flex-grow md:w-64">
-                        <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400 text-sm"></i>
-                        <input type="text" id="searchPersonnel" oninput="filterPersonnel()" placeholder="Personel veya unvan ara..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
-                    </div>
-                    <button onclick="openPersonnelModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold px-4 py-2 rounded-lg text-sm transition shadow-sm flex items-center gap-2 whitespace-nowrap">
-                        <i class="fa-solid fa-user-plus"></i>Personel Ekle
-                    </button>
-                </div>
-            </div>
-
-            <!-- Personnel Table -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 text-slate-600 text-xs uppercase tracking-wider border-b border-slate-200">
-                                <th class="p-4 font-semibold">Ad Soyad</th>
-                                <th class="p-4 font-semibold">Unvan / Görev</th>
-                                <th class="p-4 font-semibold">TC Kimlik / Sicil</th>
-                                <th class="p-4 font-semibold">İSG Eğitimi Durumu</th>
-                                <th class="p-4 font-semibold text-center">İşlemler</th>
-                            </tr>
-                        </thead>
-                        <tbody id="personnelTableBody" class="divide-y divide-slate-200 text-sm">
-                            <!-- JS ile doldurulacak -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 2: AUDIT / GÖZLEM FORMU -->
-        <section id="tab-audit" class="hidden space-y-6">
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <div class="flex justify-between items-center mb-6 border-b pb-4">
-                    <div>
-                        <h2 class="text-lg font-bold text-slate-900">İSG Saha Gözlem ve DÖF Formu</h2>
-                        <p class="text-sm text-slate-500">Saha denetimlerinde tespit edilen uygunsuzluklar ve önlemler.</p>
-                    </div>
-                    <button onclick="generatePDF()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
-                        <i class="fa-solid fa-file-pdf text-amber-400"></i>Sicil Dosyası PDF İndir
-                    </button>
-                </div>
-
-                <form id="auditForm" onsubmit="saveAudit(event)" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Proje / Şantiye Adı</label>
-                        <input type="text" id="auditProject" value="TOKİ Konut İnşaatı Şantiyesi" required class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Denetim Tarihi</label>
-                        <input type="date" id="auditDate" required class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Uygunsuzluk Kategorisi</label>
-                        <select id="auditCategory" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500">
-                            <option value="Yüksekte Çalışma">Yüksekte Çalışma</option>
-                            <option value="Kişisel Koruyucu Donanım (KKD)">Kişisel Koruyucu Donanım (KKD)</option>
-                            <option value="Elektrik Güvenliği">Elektrik Güvenliği</option>
-                            <option value="İskele ve Yapı İskeleleri">İskele ve Yapı İskeleleri</option>
-                            <option value="İş Makineleri ve Trafik">İş Makineleri ve Trafik</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Risk Derecesi</label>
-                        <select id="auditRisk" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500">
-                            <option value="Düşük">Düşük Risk</option>
-                            <option value="Orta">Orta Risk</option>
-                            <option value="Yüksek">Yüksek Risk (Acil Durdurma)</option>
-                        </select>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Uygunsuzluk Açıklaması ve Alınacak Önlem</label>
-                        <textarea id="auditDesc" rows="3" required placeholder="Tespit edilen güvensiz durumu ve giderilmesi için yapılması gerekenleri yazın..." class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500"></textarea>
-                    </div>
-                    <div class="md:col-span-2 flex justify-end">
-                        <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold px-6 py-2.5 rounded-lg text-sm transition shadow-sm">
-                            Gözlemi Kaydet
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Audit History Table -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <h3 class="text-md font-bold text-slate-900 mb-4">Yapılan Saha Gözlemleri</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 text-slate-600 text-xs uppercase tracking-wider border-b border-slate-200">
-                                <th class="p-3 font-semibold">Tarih</th>
-                                <th class="p-3 font-semibold">Kategori</th>
-                                <th class="p-3 font-semibold">Risk</th>
-                                <th class="p-3 font-semibold">Açıklama</th>
-                                <th class="p-3 font-semibold text-center">İşlem</th>
-                            </tr>
-                        </thead>
-                        <tbody id="auditTableBody" class="divide-y divide-slate-200 text-sm">
-                            <!-- JS ile doldurulacak -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- HIDDEN PDF TEMPLATE -->
-    <div id="pdfTemplate" class="hidden p-8 bg-white text-slate-800" style="width: 800px;">
-        <div class="border-b-2 border-slate-900 pb-4 mb-6 flex justify-between items-center">
-            <div>
-                <h1 class="text-xl font-bold uppercase tracking-wider text-slate-900">İSG Sicil ve Saha Denetim Raporu</h1>
-                <p class="text-xs text-slate-500">İş Sağlığı ve Güvenliği Birimi Sicil Dosyası</p>
-            </div>
-            <div class="text-right text-xs text-slate-500">
-                <p>Rapor Tarihi: <span id="pdfDate"></span></p>
-                <p>Standart: OHSAS 18001 / ISO 45001</p>
-            </div>
-        </div>
-
-        <div class="mb-6">
-            <h2 class="text-sm font-bold bg-slate-100 p-2 border-l-4 border-amber-500 mb-3">1. Şantiye Personel Özeti</h2>
-            <table class="w-full text-left text-xs border border-slate-300">
-                <thead>
-                    <tr class="bg-slate-50 border-b border-slate-300">
-                        <th class="p-2 border-r border-slate-300">Ad Soyad</th>
-                        <th class="p-2 border-r border-slate-300">Unvan</th>
-                        <th class="p-2 border-r border-slate-300">Sicil No</th>
-                        <th class="p-2">Eğitim Durumu</th>
-                    </tr>
-                </thead>
-                <tbody id="pdfPersonnelBody"></tbody>
-            </table>
-        </div>
-
-        <div class="mb-6">
-            <h2 class="text-sm font-bold bg-slate-100 p-2 border-l-4 border-amber-500 mb-3">2. Saha Gözlem ve Uygunsuzluk Kayıtları</h2>
-            <table class="w-full text-left text-xs border border-slate-300">
-                <thead>
-                    <tr class="bg-slate-50 border-b border-slate-300">
-                        <th class="p-2 border-r border-slate-300">Tarih</th>
-                        <th class="p-2 border-r border-slate-300">Kategori</th>
-                        <th class="p-2 border-r border-slate-300">Risk</th>
-                        <th class="p-2">Açıklama</th>
-                    </tr>
-                </thead>
-                <tbody id="pdfAuditBody"></tbody>
-            </table>
-        </div>
-
-        <div class="mt-12 pt-6 border-t border-slate-300 flex justify-between text-xs">
-            <div>
-                <p class="font-bold">İSG Uzmanı / Teknisyeni</p>
-                <p class="text-slate-500 mt-8">İmza:</p>
-            </div>
-            <div>
-                <p class="font-bold">Şantiye Şefi / Proje Müdürü</p>
-                <p class="text-slate-500 mt-8">İmza:</p>
-            </div>
-        </div>
+<div id="pdfModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closePdfModal()">&times;</span>
+        <h2 style="margin-bottom: 15px;">📄 İSG Sicil Dosyası Önizleme</h2>
+        <div id="pdfPreviewContainer" style="max-height: 450px; overflow-y: auto; border: 1px solid var(--border); padding: 15px; background: #fff; margin-bottom: 15px;"></div>
+        <button class="btn-primary" onclick="downloadPdfFinal()">Dosyayı Cihaza İndir (.pdf)</button>
     </div>
+</div>
 
-    <!-- PERSONNEL MODAL -->
-    <div id="personnelModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
-            <h3 class="text-lg font-bold text-slate-900 mb-4">Yeni Personel Ekle</h3>
-            <form id="personnelForm" onsubmit="savePersonnel(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Ad Soyad</label>
-                    <input type="text" id="pName" required class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Unvan / Görev</label>
-                    <input type="text" id="pRole" required placeholder="Örn: Kalıp Ustası, Operatör" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">TC Kimlik / Sicil No</label>
-                    <input type="text" id="pId" required class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">İSG Eğitimi Durumu</label>
-                    <select id="pTraining" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
-                        <option value="Tamamlandı">Tamamlandı (Geçerli)</option>
-                        <option value="Eksik / Yenilenecek">Eksik / Yenilenecek</option>
-                    </select>
-                </div>
-                <div class="flex justify-end gap-3 pt-4 border-t">
-                    <button type="button" onclick="closePersonnelModal()" class="px-4 py-2 border rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
-                    <button type="submit" class="px-4 py-2 bg-amber-500 text-slate-900 font-semibold rounded-lg text-sm hover:bg-amber-600">Kaydet</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Script Logic -->
-    <script>
-        let personnelList = JSON.parse(localStorage.getItem('isg_personnel')) || [
-            { name: 'Ahmet Yılmaz', role: 'Demirci Ustası', id: '12345678901', training: 'Tamamlandı' },
-            { name: 'Mehmet Demir', role: 'Kule Vinç Operatörü', id: '98765432109', training: 'Tamamlandı' },
-            { name: 'Ali Kaya', role: 'Düz İşçi', id: '45678912301', training: 'Eksik / Yenilenecek' }
-        ];
-
-        let auditList = JSON.parse(localStorage.getItem('isg_audits')) || [
-            { date: '2026-09-25', category: 'Yüksekte Çalışma', risk: 'Yüksek', desc: 'B Blok 3. kat balkon kenarlarında korkuluk eksikliği tespit edildi, çalışmalar durduruldu.' }
-        ];
-
-        document.getElementById('auditDate').valueAsDate = new Date();
-
-        function switchTab(tab) {
-            if(tab === 'personnel') {
-                document.getElementById('tab-personnel').classList.remove('hidden');
-                document.getElementById('tab-audit').classList.add('hidden');
-                document.getElementById('btn-personnel').className = "px-4 py-2 rounded-md text-sm font-medium transition bg-amber-500 text-slate-900 shadow";
-                document.getElementById('btn-audit').className = "px-4 py-2 rounded-md text-sm font-medium transition text-slate-300 hover:text-white";
-            } else {
-                document.getElementById('tab-audit').classList.remove('hidden');
-                document.getElementById('tab-personnel').classList.add('hidden');
-                document.getElementById('btn-audit').className = "px-4 py-2 rounded-md text-sm font-medium transition bg-amber-500 text-slate-900 shadow";
-                document.getElementById('btn-personnel').className = "px-4 py-2 rounded-md text-sm font-medium transition text-slate-300 hover:text-white";
-            }
+<script>
+    let db = { companies: [] };
+    try {
+        let saved = localStorage.getItem('isg_multi_db');
+        if (saved) {
+            db = JSON.parse(saved);
+            if (!db.companies) db.companies = [];
         }
+    } catch (e) {
+        db = { companies: [] };
+    }
 
-        function renderPersonnel() {
-            const tbody = document.getElementById('personnelTableBody');
-            tbody.innerHTML = '';
-            personnelList.forEach((p, index) => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition";
-                tr.innerHTML = `
-                    <td class="p-4 font-medium text-slate-900">${p.name}</td>
-                    <td class="p-4 text-slate-600">${p.role}</td>
-                    <td class="p-4 text-slate-500">${p.id}</td>
-                    <td class="p-4">
-                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${p.training === 'Tamamlandı' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">
-                            ${p.training}
-                        </span>
-                    </td>
-                    <td class="p-4 text-center">
-                        <button onclick="deletePersonnel(${index})" class="text-slate-400 hover:text-red-600 transition"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-            localStorage.setItem('isg_personnel', JSON.stringify(personnelList));
+    let currentCompanyId = null;
+    let selectedPersonnelIndex = null;
+    let personnelSortMode = 'alpha_asc';
+    let observationFilterMode = 'all';
+
+    function saveDB() {
+        try {
+            localStorage.setItem('isg_multi_db', JSON.stringify(db));
+        } catch (e) {
+            alert('Kayıt alanı dolu veya hata oluştu!');
         }
+    }
 
-        function filterPersonnel() {
-            const query = document.getElementById('searchPersonnel').value.toLowerCase();
-            const tbody = document.getElementById('personnelTableBody');
-            tbody.innerHTML = '';
-            personnelList.filter(p => p.name.toLowerCase().includes(query) || p.role.toLowerCase().includes(query)).forEach((p, index) => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition";
-                tr.innerHTML = `
-                    <td class="p-4 font-medium text-slate-900">${p.name}</td>
-                    <td class="p-4 text-slate-600">${p.role}</td>
-                    <td class="p-4 text-slate-500">${p.id}</td>
-                    <td class="p-4">
-                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${p.training === 'Tamamlandı' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">
-                            ${p.training}
-                        </span>
-                    </td>
-                    <td class="p-4 text-center">
-                        <button onclick="deletePersonnel(${index})" class="text-slate-400 hover:text-red-600 transition"><i class="fa-solid fa-trash"></i></button>
-                    </td>
+    function getCurrentCompany() {
+        if (!currentCompanyId) return null;
+        return db.companies.find(c => c.id === currentCompanyId);
+    }
+
+    function renderCompanyList() {
+        currentCompanyId = null;
+        selectedPersonnelIndex = null;
+        let html = `
+            <header>
+                <h1>🏗️ İSG Saha Yönetim Asistanı</h1>
+            </header>
+            <div class="card">
+                <h2>Firma / Şantiye Ekle</h2>
+                <input type="text" id="compName" placeholder="Firma veya Şantiye Adı">
+                <input type="text" id="compDesc" placeholder="Lokasyon / Açıklama">
+                <button class="btn-primary" onclick="addCompany()">Şantiye / Firma Oluştur</button>
+            </div>
+            <div class="card">
+                <h2>Kayıtlı Firmalarım / Şantiyeler</h2>
+                <div class="company-grid">
+        `;
+
+        if (!db.companies || db.companies.length === 0) {
+            html += `<p style="grid-column: 1/-1; text-align: center; color: #64748b; padding: 20px;">Henüz eklenmiş firma yok.</p>`;
+        } else {
+            db.companies.forEach(comp => {
+                let pCount = comp.personnel ? comp.personnel.length : 0;
+                let accCount = comp.accidents ? comp.accidents.length : 0;
+                html += `
+                    <div class="company-card" onclick="selectCompany('${comp.id}')">
+                        <h3>${comp.name}</h3>
+                        <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 8px;">${comp.desc || 'Açıklama yok'}</p>
+                        <span class="badge badge-green">${pCount} Personel</span>
+                        <span class="badge badge-red" style="margin-left:5px;">${accCount} Denetim</span>
+                    </div>
                 `;
-                tbody.appendChild(tr);
             });
         }
+        html += `</div></div>`;
+        document.getElementById('app').innerHTML = html;
+    }
 
-        function openPersonnelModal() { document.getElementById('personnelModal').classList.remove('hidden'); document.getElementById('personnelModal').classList.add('flex'); }
-        function closePersonnelModal() { document.getElementById('personnelModal').classList.add('hidden'); document.getElementById('personnelModal').classList.remove('flex'); }
+    function addCompany() {
+        let nameField = document.getElementById('compName');
+        let descField = document.getElementById('compDesc');
+        if(!nameField || !nameField.value.trim()) { alert('Lütfen firma adı girin!'); return; }
+        
+        db.companies.push({
+            id: 'comp_' + Date.now(),
+            name: nameField.value.trim(),
+            desc: descField ? descField.value.trim() : '',
+            personnel: [],
+            accidents: []
+        });
+        saveDB();
+        renderCompanyList();
+    }
 
-        function savePersonnel(e) {
-            e.preventDefault();
-            const newP = {
-                name: document.getElementById('pName').value,
-                role: document.getElementById('pRole').value,
-                id: document.getElementById('pId').value,
-                training: document.getElementById('pTraining').value
-            };
-            personnelList.push(newP);
-            renderPersonnel();
-            closePersonnelModal();
-            document.getElementById('personnelForm').reset();
-        }
+    function selectCompany(id) {
+        currentCompanyId = id;
+        selectedPersonnelIndex = null;
+        renderDashboard();
+    }
 
-        function deletePersonnel(index) {
-            personnelList.splice(index, 1);
-            renderPersonnel();
-        }
+    let currentTab = 'personnel';
 
-        function renderAudits() {
-            const tbody = document.getElementById('auditTableBody');
-            tbody.innerHTML = '';
-            auditList.forEach((a, index) => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition";
-                tr.innerHTML = `
-                    <td class="p-3 text-slate-600">${a.date}</td>
-                    <td class="p-3 font-medium text-slate-900">${a.category}</td>
-                    <td class="p-3">
-                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold ${a.risk === 'Yüksek' ? 'bg-red-100 text-red-800' : a.risk === 'Orta' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}">
-                            ${a.risk}
-                        </span>
-                    </td>
-                    <td class="p-3 text-slate-600">${a.desc}</td>
-                    <td class="p-3 text-center">
-                        <button onclick="deleteAudit(${index})" class="text-slate-400 hover:text-red-600 transition"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-            localStorage.setItem('isg_audits', JSON.stringify(auditList));
-        }
+    function renderDashboard() {
+        let comp = getCurrentCompany();
+        if(!comp) { renderCompanyList(); return; }
 
-        function saveAudit(e) {
-            e.preventDefault();
-            const newA = {
-                date: document.getElementById('auditDate').value,
-                category: document.getElementById('auditCategory').value,
-                risk: document.getElementById('auditRisk').value,
-                desc: document.getElementById('auditDesc').value
-            };
-            auditList.unshift(newA);
-            renderAudits();
-            document.getElementById('auditDesc').value = '';
-            alert('Gözlem başarıyla kaydedildi.');
-        }
+        let html = `
+            <header>
+                <div>
+                    <h1>🏢 ${comp.name}</h1>
+                    <small style="opacity: 0.8;">${comp.desc || ''}</small>
+                </div>
+                <button class="btn-back" onclick="renderCompanyList()">Firmalara Dön</button>
+            </header>
 
-        function deleteAudit(index) {
-            auditList.splice(index, 1);
-            renderAudits();
-        }
-
-        function generatePDF() {
-            document.getElementById('pdfDate').innerText = new Date().toLocaleDateString('tr-TR');
+            <div class="tabs">
+                <button class="tab-btn ${currentTab==='personnel'?'active':''}" onclick="switchTab('personnel')">Personel Listesi</button>
+                <button class="tab-btn ${currentTab==='accidents'?'active':''}" onclick="switchTab('accidents')">Denetim / Olay</button>
+                <button class="tab-btn ${currentTab==='gallery'?'active':''}" onclick="switchTab('gallery')">📷 Saha Görselleri</button>
+                <button class="tab-btn ${currentTab==='reports'?'active':''}" onclick="switchTab('reports')">Özet</button>
+            </div>
             
-            const pBody = document.getElementById('pdfPersonnelBody');
-            pBody.innerHTML = '';
-            personnelList.forEach(p => {
-                pBody.innerHTML += `<tr class="border-b border-slate-200"><td class="p-2 border-r border-slate-200">${p.name}</td><td class="p-2 border-r border-slate-200">${p.role}</td><td class="p-2 border-r border-slate-200">${p.id}</td><td class="p-2">${p.training}</td></tr>`;
-            });
+            <div id="tabContent"></div>
+        `;
+        document.getElementById('app').innerHTML = html;
+        renderTabContent();
+    }
 
-            const aBody = document.getElementById('pdfAuditBody');
-            aBody.innerHTML = '';
-            auditList.forEach(a => {
-                aBody.innerHTML += `<tr class="border-b border-slate-200"><td class="p-2 border-r border-slate-200">${a.date}</td><td class="p-2 border-r border-slate-200">${a.category}</td><td class="p-2 border-r border-slate-200">${a.risk}</td><td class="p-2">${a.desc}</td></tr>`;
-            });
+    function switchTab(tab) {
+        currentTab = tab;
+        selectedPersonnelIndex = null;
+        renderDashboard();
+    }
 
-            const element = document.getElementById('pdfTemplate');
-            element.classList.remove('hidden');
+    function renderTabContent() {
+        let comp = getCurrentCompany();
+        if (!comp) return;
+        let content = '';
 
-            const opt = {
-                margin:       10,
-                filename:     'ISG_Sicil_ve_Saha_Raporu.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
+        if (currentTab === 'personnel') {
+            if (!comp.personnel) comp.personnel = [];
+            
+            if (selectedPersonnelIndex !== null && comp.personnel[selectedPersonnelIndex]) {
+                let p = comp.personnel[selectedPersonnelIndex];
+                if(!p.trainings) p.trainings = [];
+                if(!p.health) p.health = [];
+                if(!p.ppe) p.ppe = [];
+                if(!p.observations) p.observations = [];
 
-            html2pdf().from(element).set(opt).save().then(() => {
-                element.classList.add('hidden');
-            });
+                let filteredObs = [...p.observations];
+                if (observationFilterMode === 'uygunsuzluk') {
+                    filteredObs = filteredObs.filter(o => o.type === 'Uygunsuz Davranış');
+                } else if (observationFilterMode === 'uygunluk') {
+                    filteredObs = filteredObs.filter(o => o.type === 'Uyum / Başarı');
+                } else if (observationFilterMode === 'date_new') {
+                    filteredObs.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+                } else if (observationFilterMode === 'date_old') {
+                    filteredObs.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+                }
+
+                content = `
+                    <button class="btn-back" style="margin-bottom:10px;" onclick="selectedPersonnelIndex=null; renderTabContent();">← Personel Listesine Dön</button>
+                    <div class="card" style="border: 2px solid var(--primary);">
+                        <h2>👤 ${p.name} - Personel Sicil Detayı</h2>
+                        <p><strong>TC Kimlik:</strong> ${p.tc || 'Belirtilmemiş'}</p>
+                        <p><strong>Görevi:</strong> ${p.job || 'Belirtilmemiş'}</p>
+                        <p><strong>İşe Giriş Tarihi:</strong> ${p.date || 'Belirtilmemiş'}</p>
+                        <div style="margin-top:15px; display:flex; gap:10px;">
+                            <button class="btn-primary" style="background:#2563eb;" onclick="openPdfPreview()">📄 İSG Sicil Dosyası İndir (Önizle)</button>
+                        </div>
+                    </div>
+
+                    <div class="card" style="border: 2px dashed var(--secondary);">
+                        <h2>📝 İSG Gözlem Formu (Davranış & Başarı)</h2>
+                        <select id="obsType">
+                            <option value="Uygunsuz Davranış">Uygunsuz Davranış / Risk</option>
+                            <option value="Uyum / Başarı">Uyum / Örnek Başarı</option>
+                        </select>
+                        <input type="text" id="obsLocation" placeholder="Konum / Nerede (Örn: 2. Kat İskele)">
+                        <textarea id="obsDesc" placeholder="Ne zaman, ne uygunsuzluk veya uyum yapmış? Detay yazın..." rows="3"></textarea>
+                        <input type="date" id="obsDate">
+                        <label style="font-size:0.85rem; font-weight:bold; color:#64748b;">Kanıt Görseli (Fotoğraf):</label>
+                        <input type="file" id="obsImgFile" accept="image/*" style="margin-top:5px; margin-bottom:10px;">
+                        <button class="btn-primary" onclick="addObservation()">Gözlem Kaydı Ekle</button>
+                    </div>
+
+                    <div class="card">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <h2>Gözlem Geçmişi (${p.observations.length})</h2>
+                            <select id="obsFilter" onchange="changeObservationFilter(this.value)" style="width:160px; margin:0; padding:5px;">
+                                <option value="all" ${observationFilterMode==='all'?'selected':''}>Tümü</option>
+                                <option value="uygunsuzluk" ${observationFilterMode==='uygunsuzluk'?'selected':''}>Uygunsuzluklar</option>
+                                <option value="uygunluk" ${observationFilterMode==='uygunluk'?'selected':''}>Uyum / Başarı</option>
+                                <option value="date_new" ${observationFilterMode==='date_new'?'selected':''}>Yeniden Eskiye</option>
+                                <option value="date_old" ${observationFilterMode==='date_old'?'selected':''}>Eskiden Yeniye</option>
+                            </select>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <tr><th>Görsel</th><th>Tür</th><th>Konum / Tarih / Açıklama</th><th>İşlem</th></tr>
+                                ${filteredObs.length === 0 ? '<tr><td colspan="4" style="text-align:center; color:#64748b;">Kayıt bulunamadı.</td></tr>' : filteredObs.map((o) => {
+                                    let realIdx = p.observations.indexOf(o);
+                                    return `
+                                        <tr>
+                                            <td>${o.img ? `<img src="${o.img}" class="report-img" onclick="window.open('${o.img}')">` : 'Yok'}</td>
+                                            <td><span class="badge ${o.type==='Uygunsuz Davranış'?'badge-red':'badge-green'}">${o.type}</span></td>
+                                            <td><strong>Yer:</strong> ${o.location || '-'}<br><strong>Tarih:</strong> ${o.date \vert{}\vert{} '-'}<br>${o.desc}</td>
+                                            <td><button class="btn-danger" onclick="deleteObservation(${realIdx})">Sil</button></td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>Eğitim Ekle</h2>
+                        <input type="text" id="ptName" placeholder="Eğitim Konusu">
+                        <input type="date" id="ptDate">
+                        <button class="btn-primary" onclick="addPersonnelSub('trainings')">Eğitim Kaydet</button>
+                        <h4 style="margin-top:10px; font-size:0.9rem; color:var(--primary);">Verilen Eğitimler (${p.trainings.length})</h4>
+                        <ul>${p.trainings.map((t, idx) => `<li>${t.date} -${t.name} <button class="btn-danger" style="padding:2px 5px; font-size:0.7rem;" onclick="deletePersonnelSub('trainings', ${idx})">Sil</button></li>`).join('')}</ul>
+                    </div>
+
+                    <div class="card">
+                        <h2>Sağlık / Muayene Ekle</h2>
+                        <input type="text" id="phType" placeholder="Muayene Türü">
+                        <input type="date" id="phDate">
+                        <button class="btn-primary" onclick="addPersonnelSub('health')">Sağlık Kaydet</button>
+                        <h4 style="margin-top:10px; font-size:0.9rem; color:var(--primary);">Sağlık Geçmişi (${p.health.length})</h4>
+                        <ul>${p.health.map((h, idx) => `<li>${h.date} -${h.type} <button class="btn-danger" style="padding:2px 5px; font-size:0.7rem;" onclick="deletePersonnelSub('health', ${idx})">Sil</button></li>`).join('')}</ul>
+                    </div>
+
+                    <div class="card">
+                        <h2>KKD Zimmet Ekle</h2>
+                        <input type="text" id="peItem" placeholder="Malzeme (Baret, Ayakkabı vb.)">
+                        <input type="date" id="peDate">
+                        <button class="btn-primary" onclick="addPersonnelSub('ppe')">Zimmetle</button>
+                        <h4 style="margin-top:10px; font-size:0.9rem; color:var(--primary);">Zimmetli Ekipmanlar (${p.ppe.length})</h4>
+                        <ul>${p.ppe.map((e, idx) => `<li>${e.date} -${e.item} <button class="btn-danger" style="padding:2px 5px; font-size:0.7rem;" onclick="deletePersonnelSub('ppe', ${idx})">Sil</button></li>`).join('')}</ul>
+                    </div>
+                `;
+            } else {
+                let sortedPersonnel = [...comp.personnel];
+                if (personnelSortMode === 'alpha_asc') {
+                    sortedPersonnel.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr'));
+                } else if (personnelSortMode === 'alpha_desc') {
+                    sortedPersonnel.sort((a, b) => (b.name || '').localeCompare(a.name || '', 'tr'));
+                } else if (personnelSortMode === 'date_new') {
+                    sortedPersonnel.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+                } else if (personnelSortMode === 'date_old') {
+                    sortedPersonnel.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+                }
+
+                content = `
+                    <div class="card">
+                        <h2>Yeni Personel Ekle</h2>
+                        <input type="text" id="pName" placeholder="Ad Soyad">
+                        <input type="text" id="pTC" placeholder="TC Kimlik No">
+                        <input type="text" id="pJob" placeholder="Görevi / Mesleği">
+                        <input type="date" id="pDate">
+                        <button class="btn-primary" onclick="addPersonnel()">Personeli Kaydet</button>
+                    </div>
+                    <div class="card" style="border: 2px dashed var(--secondary);">
+                        <h2>📁 Personel Dışa Aktar</h2>
+                        <button class="btn-excel" onclick="exportPersonnelExcel()">Personeli Excel'e Aktar (.xlsx)</button>
+                    </div>
+                    <div class="card">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <h2>Personel Listesi (${comp.personnel.length})</h2>
+                            <select id="sortSelect" onchange="changeSortMode(this.value)" style="width:160px; margin:0; padding:5px;">
+                                <option value="alpha_asc" ${personnelSortMode==='alpha_asc'?'selected':''}>İsim (A-Z)</option>
+                                <option value="alpha_desc" ${personnelSortMode==='alpha_desc'?'selected':''}>İsim (Z-A)</option>
+                                <option value="date_new" ${personnelSortMode==='date_new'?'selected':''}>Yeniden Eskiye</option>
+                                <option value="date_old" ${personnelSortMode==='date_old'?'selected':''}>Eskiden Yeniye</option>
+                            </select>
+                        </div>
+                        ${comp.personnel.length > 0 ? `<button class="btn-bulk-delete" onclick="bulkDelete('personnel')">Seçilenleri Sil</button>` : ''}
+                        <div class="table-responsive">
+                            <table>
+                                <tr>
+                                    <th style="width:30px;"><input type="checkbox" id="selectAll-personnel" onclick="toggleSelectAll('personnel')"></th>
+                                    <th>Ad Soyad</th><th>TC</th><th>Görev</th><th>İşlem</th>
+                                </tr>
+                                ${sortedPersonnel.length === 0 ? '<tr><td colspan="5" style="text-align:center; color:#64748b;">Henüz personel eklenmemiş.</td></tr>' : sortedPersonnel.map((p) => {
+                                    let realIdx = comp.personnel.indexOf(p);
+                                    return `
+                                        <tr>
+                                            <td><input type="checkbox" class="select-personnel" value="${realIdx}"></td>
+                                            <td style="cursor:pointer; color:var(--secondary); font-weight:bold;" onclick="selectPersonnelDetail(${realIdx})">${p.name}</td>
+                                            <td>${p.tc \vert{}\vert{} '-'}</td><td>${p.job || '-'}</td>
+                                            <td><button class="btn-danger" onclick="deleteItem('personnel', ${realIdx})">Sil</button></td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+        } else if (currentTab === 'accidents') {
+            if(!comp.accidents) comp.accidents = [];
+            content = `
+                <div class="card">
+                    <h2>Denetim / Kaza / Uygunsuzluk Ekle</h2>
+                    <select id="accType"><option value="Ramak Kala Olay">Ramak Kala Olay</option><option value="İş Kazası">İş Kazası</option><option value="DÖF / Uygunsuzluk">DÖF / Uygunsuzluk</option></select>
+                    <textarea id="accDesc" placeholder="Olay özeti ve alınan önlem..." rows="3"></textarea>
+                    <input type="date" id="accDate">
+                    <label style="font-size:0.85rem; font-weight:bold; color:#64748b;">Fotoğraf Yükle:</label>
+                    <input type="file" id="accImgFile" accept="image/*" style="margin-top:5px;">
+                    <button class="btn-primary" onclick="addAccidentWithImage()">Kayıt Ekle</button>
+                </div>
+
+                <div class="card">
+                    <h2>Denetim & Olay Geçmişi (${comp.accidents.length})</h2>
+                    ${comp.accidents.length > 0 ? `<button class="btn-bulk-delete" onclick="bulkDelete('accidents')">Seçilenleri Sil</button>` : ''}
+                    <div class="table-responsive">
+                        <table>
+                            <tr>
+                                <th style="width:30px;"><input type="checkbox" id="selectAll-accidents" onclick="toggleSelectAll('accidents')"></th>
+                                <th>Görsel</th><th>Tür</th><th>Açıklama</th><th>Tarih</th><th>İşlem</th>
+                            </tr>
+                            ${comp.accidents.map((a, i) => `
+                                <tr>
+                                    <td><input type="checkbox" class="select-accidents" value="${i}"></td>
+                                    <td>${a.img ? `<img src="${a.img}" class="report-img" onclick="window.open('${a.img}')">` : 'Yok'}</td>
+                                    <td><span class="badge ${a.type && a.type.includes('Kazası')?'badge-red':'badge-green'}">${a.type || ''}</span></td>
+                                    <td>${a.desc || ''}</td>
+                                    <td>${a.date || ''}</td>
+                                    <td><button class="btn-danger" onclick="deleteItem('accidents', ${i})">Sil</button></td>
+                                </tr>
+                            `).join('')}
+                        </table>
+                    </div>
+                </div>
+            `;
+        } else if (currentTab === 'gallery') {
+            if(!comp.accidents) comp.accidents = [];
+            let imgList = comp.accidents.filter(a => a.img && a.img.trim() !== '');
+            content = `
+                <div class="card">
+                    <h2>📷 Hızlı Saha Görseli Ekle</h2>
+                    <input type="text" id="galleryDesc" placeholder="Görsel Açıklaması / Konum">
+                    <input type="file" id="galleryFile" accept="image/*" style="display:none;" onchange="handleGalleryFile(this)">
+                    <button class="btn-primary" onclick="document.getElementById('galleryFile').click()">📁 Galeriden Fotoğraf Seç</button>
+                    <input type="file" id="galleryCamera" accept="image/*" capture="environment" style="display:none;" onchange="handleGalleryFile(this)">
+                    <button class="btn-camera" onclick="document.getElementById('galleryCamera').click()">📸 Kamera ile Anlık Çek</button>
+                </div>
+
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h2>🖼️ Saha Görselleri Galerisi (${imgList.length})</h2>
+                        ${imgList.length > 0 ? `<button class="btn-bulk-delete" onclick="bulkDeleteGallery()" style="margin:0;">Seçilenleri Sil</button>` : ''}
+                    </div>
+                    ${imgList.length === 0 ? '<p style="text-align:center; color:#64748b; padding:20px;">Henüz görsel eklenmemiş.</p>' : `
+                        <div class="gallery-grid">
+                            ${comp.accidents.map((item, originalIndex) => {
+                                if (!item.img) return '';
+                                return `
+                                    <div class="gallery-item">
+                                        <input type="checkbox" class="select-gallery" value="${originalIndex}">
+                                        <img src="${item.img}" onclick="window.open('${item.img}')" title="Büyütmek için tıklayın">
+                                        <p>${item.date || ''} - ${item.desc || 'Açıklama yok'}</p>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    `}
+                </div>
+            `;
+        } else if (currentTab === 'reports') {
+            content = `
+                <div class="card">
+                    <h2>📊 Şantiye Genel Özet Raporu</h2>
+                    <div class="stats-box">
+                        <div class="stat-card"><h4>Toplam Personel</h4><p>${comp.personnel ? comp.personnel.length : 0}</p></div>
+                        <div class="stat-card"><h4>Denetim / Olay</h4><p>${comp.accidents ? comp.accidents.length : 0}</p></div>
+                    </div>
+                </div>
+            `;
         }
 
-        renderPersonnel();
-        renderAudits();
-    </script>
+        let tabContainer = document.getElementById('tabContent');
+        if (tabContainer) tabContainer.innerHTML = content;
+    }
+
+    function changeSortMode(mode) { personnelSortMode = mode; renderTabContent(); }
+    function changeObservationFilter(mode) { observationFilterMode = mode; renderTabContent(); }
+    function selectPersonnelDetail(index) { selectedPersonnelIndex = index; observationFilterMode = 'all'; renderTabContent(); }
+
+    function addObservation() {
+        let comp = getCurrentCompany();
+        let p = comp.personnel[selectedPersonnelIndex];
+        let type = document.getElementById('obsType').value;
+        let location = document.getElementById('obsLocation').value.trim();
+        let desc = document.getElementById('obsDesc').value.trim();
+        let date = document.getElementById('obsDate').value;
+        let fileInput = document.getElementById('obsImgFile');
+
+        if(!desc) { alert('Lütfen gözlem açıklaması girin!'); return; }
+
+        if (fileInput && fileInput.files && fileInput.files[0]) {
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                p.observations.push({ type, location, desc, date, img: e.target.result });
+                saveDB();
+                renderTabContent();
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        } else {
+            p.observations.push({ type, location, desc, date, img: '' });
+            saveDB();
+            renderTabContent();
+        }
+    }
+
+    function deleteObservation(idx) {
+        let comp = getCurrentCompany();
+        let p = comp.personnel[selectedPersonnelIndex];
+        if(confirm('Bu gözlem kaydını silmek istediğinize emin misiniz?')) {
+            p.observations.splice(idx, 1);
+            saveDB();
+            renderTabContent();
+        }
+    }
+
+    function addPersonnelSub(type) {
+        let comp = getCurrentCompany();
+        let p = comp.personnel[selectedPersonnelIndex];
+        if (type === 'trainings') {
+            let name = document.getElementById('ptName').value.trim();
+            let date = document.getElementById('ptDate').value;
+            if(!name) return;
+            p.trainings.push({ name, date });
+        } else if (type === 'health') {
+            let typeName = document.getElementById('phType').value.trim();
+            let date = document.getElementById('phDate').value;
+            if(!typeName) return;
+            p.health.push({ type: typeName, date });
+        } else if (type === 'ppe') {
+            let item = document.getElementById('peItem').value.trim();
+            let date = document.getElementById('peDate').value;
+            if(!item) return;
+            p.ppe.push({ item, date });
+        }
+        saveDB();
+        renderTabContent();
+    }
+
+    function deletePersonnelSub(type, idx) {
+        let comp = getCurrentCompany();
+        let p = comp.personnel[selectedPersonnelIndex];
+        p[type].splice(idx, 1);
+        saveDB();
+        renderTabContent();
+    }
+
+    function generatePdfHtmlString() {
+        let comp = getCurrentCompany();
+        let p = comp.personnel[selectedPersonnelIndex];
+        return `
+            <div id="pdfExportContent" style="padding: 20px; font-family: sans-serif; color: #000; background: #fff;">
+                <div style="text-align: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 15px;">
+                    <h2 style="color: #1e3a8a; margin: 0;">İSG PERSONEL SİCİL DOSYASI</h2>
+                    <p style="font-size: 0.85rem; color: #555; margin-top: 4px;">Şantiye: ${comp.name}</p>
+                </div>
+                <div style="margin-bottom: 15px; font-size: 0.9rem;">
+                    <p><strong>Ad Soyad:</strong> ${p.name}</p>
+                    <p><strong>TC Kimlik No:</strong> ${p.tc || '-'}</p>
+                    <p><strong>Görevi:</strong> ${p.job || '-'}</p>
+                    <p><strong>İşe Giriş Tarihi:</strong> ${p.date || '-'}</p>
+                </div>
+                <hr style="border:0; border-top:1px solid #ccc; margin: 15px 0;">
+                
+                <h3 style="font-size: 1rem; color: #1e3a8a; margin-bottom: 5px;">İSG Gözlem Formu / Davranış Kayıtları</h3>
+                <div style="font-size: 0.85rem; margin-bottom: 15px;">
+                    ${p.observations && p.observations.length > 0 ? p.observations.map(o => `
+                        <div style="border: 1px solid #ddd; padding: 8px; margin-bottom: 6px; border-radius: 4px;">
+                            <p><strong>Tür:</strong> ${o.type} | <strong>Konum:</strong> ${o.location \vert{}\vert{} '-'} \vert{} <strong>Tarih:</strong>${o.date || '-'}</p>
+                            <p><strong>Açıklama:</strong> ${o.desc}</p>${o.img ? `<img src="${o.img}" style="width:100px; height:70px; object-fit:cover; margin-top:5px; border-radius:4px;">` : ''}
+                        </div>
+                    `).join('') : '<p>Kayıt yok</p>'}
+                </div>
+
+                <h3 style="font-size: 1rem; color: #1e3a8a; margin-bottom: 5px;">Verilen Eğitimler</h3>
+                <ul style="font-size: 0.85rem; padding-left: 20px; margin-bottom: 15px;">
+                    ${p.trainings && p.trainings.length > 0 ? p.trainings.map(t => `<li>${t.date} -${t.name}</li>`).join('') : '<li>Kayıt yok</li>'}
+                </ul>
+                <h3 style="font-size: 1rem; color: #1e3a8a; margin-bottom: 5px;">Sağlık Muayeneleri</h3>
+                <ul style="font-size: 0.85rem; padding-left: 20px; margin-bottom: 15px;">
+                    ${p.health && p.health.length > 0 ? p.health.map(h => `<li>${h.date} -${h.type}</li>`).join('') : '<li>Kayıt yok</li>'}
+                </ul>
+                <h3 style="font-size: 1rem; color: #1e3a8a; margin-bottom: 5px;">KKD Zimmet Geçmişi</h3>
+                <ul style="font-size: 0.85rem; padding-left: 20px; margin-bottom: 15px;">
+                    ${p.ppe && p.ppe.length > 0 ? p.ppe.map(e => `<li>${e.date} -${e.item}</li>`).join('') : '<li>Kayıt yok</li>'}
+                </ul>
+            </div>
+        `;
+    }
+
+    function openPdfPreview() {
+        let container = document.getElementById('pdfPreviewContainer');
+        let modal = document.getElementById('pdfModal');
+        if (container) container.innerHTML = generatePdfHtmlString();
+        if (modal) modal.style.display = 'block';
+    }
+
+    function closePdfModal() {
+        let modal = document.getElementById('pdfModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function downloadPdfFinal() {
+        let p = getCurrentCompany().personnel[selectedPersonnelIndex];
+        let element = document.createElement('div');
+        element.innerHTML = generatePdfHtmlString();
+        
+        let opt = {
+            margin:       10,
+            filename:     `${(p.name || 'personel').replace(/\s+/g, '_')}_isg_sicil.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        if (typeof html2pdf !== 'undefined') {
+            html2pdf().from(element).set(opt).save().then(() => {
+                closePdfModal();
+            });
+        } else {
+            alert('PDF kütüphanesi yüklenemedi. Lütfen internet bağlantınızı kontrol edin.');
+        }
+    }
+
+    function handleGalleryFile(input) {
+        if (input.files && input.files[0]) {
+            let reader = new FileReader();
+            let descInput = document.getElementById('galleryDesc');
+            let descText = descInput ? descInput.value.trim() : '';
+            let today = new Date().toISOString().split('T')[0];
+
+            reader.onload = function(e) {
+                let comp = getCurrentCompany();
+                comp.accidents.push({
+                    type: 'DÖF / Uygunsuzluk',
+                    desc: descText || 'Saha Görseli',
+                    date: today,
+                    img: e.target.result
+                });
+                saveDB();
+                renderTabContent();
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function toggleSelectAll(listName) {
+        let masterCheckbox = document.getElementById(`selectAll-${listName}`);
+        let checkboxes = document.querySelectorAll(`.select-${listName}`);
+        checkboxes.forEach(cb => cb.checked = masterCheckbox ? masterCheckbox.checked : false);
+    }
+
+    function bulkDelete(listName) {
+        let checkboxes = document.querySelectorAll(`.select-${listName}:checked`);
+        if(checkboxes.length === 0) { alert('Lütfen silinecek en az bir kayıt seçin!'); return; }
+        
+        if(confirm(`Seçilen ${checkboxes.length} kaydı silmek istediğinize emin misiniz?`)) {
+            let comp = getCurrentCompany();
+            let indices = Array.from(checkboxes).map(cb => parseInt(cb.value)).sort((a, b) => b - a);
+            indices.forEach(index => { comp[listName].splice(index, 1); });
+            saveDB();
+            renderTabContent();
+        }
+    }
+
+    function bulkDeleteGallery() {
+        let checkboxes = document.querySelectorAll('.select-gallery:checked');
+        if(checkboxes.length === 0) { alert('Lütfen silinecek en az bir görsel seçin!'); return; }
+        
+        if(confirm(`Seçilen ${checkboxes.length} görseli silmek istediğinize emin misiniz?`)) {
+            let comp = getCurrentCompany();
+            let indices = Array.from(checkboxes).map(cb => parseInt(cb.value)).sort((a, b) => b - a);
+            indices.forEach(index => { comp.accidents.splice(index, 1); });
+            saveDB();
+            renderTabContent();
+        }
+    }
+
+    function addAccidentWithImage() {
+        let type = document.getElementById('accType').value;
+        let desc = document.getElementById('accDesc').value;
+        let date = document.getElementById('accDate').value;
+        let fileInput = document.getElementById('accImgFile');
+        if(!desc) { alert('Lütfen açıklama girin'); return; }
+
+        let comp = getCurrentCompany();
+        if (fileInput && fileInput.files && fileInput.files[0]) {
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                comp.accidents.push({ type, desc, date, img: e.target.result });
+                saveDB();
+                renderTabContent();
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        } else {
+            comp.accidents.push({ type, desc, date, img: '' });
+            saveDB();
+            renderTabContent();
+        }
+    }
+
+    function exportPersonnelExcel() {
+        let comp = getCurrentCompany();
+        if(!comp.personnel || comp.personnel.length === 0) { alert('Dışa aktarılacak personel yok!'); return; }
+        let data = comp.personnel.map(p => ({ "Ad Soyad": p.name, "TC Kimlik": p.tc, "Görev": p.job, "Giriş Tarihi": p.date }));
+        let worksheet = XLSX.utils.json_to_sheet(data);
+        let workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Personel");
+        XLSX.writeFile(workbook, `${comp.name}_personel.xlsx`);
+    }
+
+    function addPersonnel() {
+        let name = document.getElementById('pName').value.trim();
+        let tc = document.getElementById('pTC').value.trim();
+        let job = document.getElementById('pJob').value.trim();
+        let date = document.getElementById('pDate').value;
+        if(!name) { alert('Lütfen personel adı girin!'); return; }
+        
+        let comp = getCurrentCompany();
+        if(!comp.personnel) comp.personnel = [];
+        
+        comp.personnel.push({ name, tc, job, date, trainings: [], health: [], ppe: [], observations: [] });
+        saveDB();
+        renderTabContent();
+    }
+
+    function deleteItem(listName, index) {
+        if(confirm('Silmek istediğinize emin misiniz?')) {
+            let comp = getCurrentCompany();
+            comp[listName].splice(index, 1);
+            saveDB();
+            renderTabContent();
+        }
+    }
+
+    renderCompanyList();
+</script>
+
 </body>
 </html>
