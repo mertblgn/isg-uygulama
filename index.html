@@ -1,400 +1,200 @@
 <!DOCTYPE html>
-<html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>İSG Saha Yönetim Asistanı</title>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-<!-- QR Kod Kütüphaneleri -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-<style>
-:root{--p:#1e3a8a;--s:#3b82f6;--d:#ef4444;--g:#10b981;--bd:#cbd5e1}
-*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-body{background:#f8fafc;color:#1e293b;padding:58px 10px 10px}body.nb{padding-top:10px}
-#bar{display:none;position:fixed;top:0;left:0;right:0;height:48px;z-index:8;background:#172554;color:#fff;align-items:center;gap:8px;padding:0 10px;box-shadow:0 2px 6px #0004}
-.c{max-width:800px;margin:0 auto;padding-bottom:50px}
-header{background:var(--p);color:#fff;padding:15px;border-radius:12px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center;gap:8px}
-header h1{font-size:1.1rem}
-.card{background:#fff;border-radius:12px;padding:15px;margin-bottom:15px;border:1px solid var(--bd)}
-.warn{background:#fef3c7;border-color:#f59e0b;font-size:.9rem}
-h2{font-size:1.05rem;color:var(--p);margin-bottom:12px;border-bottom:2px solid #f1f5f9;padding-bottom:6px}
-label{display:block;font-size:.8rem;font-weight:600;color:#64748b;margin-bottom:3px}
-input,select,textarea{width:100%;padding:10px;margin-bottom:10px;border:1px solid var(--bd);border-radius:8px;font-size:.95rem}
-input[type=checkbox]{width:auto;margin:0}
-.b{display:block;width:100%;background:var(--s);color:#fff;border:0;padding:11px;border-radius:8px;font-size:.95rem;font-weight:700;cursor:pointer;margin-bottom:8px}
-.b.g{background:var(--g)}.b.v{background:#8b5cf6}.b.dg{background:var(--d)}
-.b.sm{display:inline-block;width:auto;padding:6px 10px;font-size:.8rem;margin:0}
-button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #f59e0b;outline-offset:1px}
-.tabs{display:flex;gap:5px;overflow-x:auto;margin-bottom:15px}
-.tb{background:#e2e8f0;border:0;padding:8px 12px;border-radius:8px;white-space:nowrap;font-weight:600;color:#475569;cursor:pointer}
-.tb.on{background:var(--p);color:#fff}
-.tr{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:.85rem}
-th,td{border:1px solid var(--bd);padding:8px;text-align:left;vertical-align:middle}
-th{background:#f1f5f9;color:var(--p)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
-.cc{border:2px solid var(--s);border-radius:10px;padding:15px;text-align:center;cursor:pointer}
-.cc:hover{background:#eff6ff}
-.cc{position:relative;overflow:hidden}.cc>:not(.wm){position:relative}.cc .wm{position:absolute;inset:6px;width:calc(100% - 12px);height:calc(100% - 12px);object-fit:contain;opacity:.16;pointer-events:none}
-.cc h3{color:var(--p)}.cc p{font-size:.8rem;color:#64748b;margin:4px 0 8px}
-.bg{display:inline-block;padding:3px 8px;border-radius:4px;font-size:.75rem;font-weight:700}
-.gr{background:#d1fae5;color:#065f46}.r{background:#fee2e2;color:#991b1b}.y{background:#fef3c7;color:#92400e}
-.un{border:2px solid var(--d)}
-.th{width:80px;height:60px;object-fit:cover;border-radius:4px;border:1px solid var(--bd);cursor:pointer;background:#e2e8f0}
-.gi{border:1px solid var(--bd);border-radius:8px;padding:5px;position:relative;font-size:.75rem;color:#64748b}
-.gi input{position:absolute;top:10px;left:10px;width:18px;height:18px}
-.gi img{width:100%;height:110px;object-fit:cover;border-radius:4px;cursor:pointer;background:#e2e8f0}
-.st{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.st div{background:#f8fafc;border:1px solid var(--bd);border-radius:8px;padding:10px;text-align:center;font-size:.8rem;color:#64748b}
-.st b{display:block;font-size:1.3rem;color:var(--p)}
-.md{display:none;position:fixed;inset:0;z-index:9;background:#000a;padding:20px;overflow:auto}
-.mc{background:#fff;margin:auto;padding:20px;border-radius:12px;max-width:700px}
-#lb{text-align:center}#lb img{max-width:100%;max-height:100%}
-li{margin:4px 0 4px 18px}
-.mt{text-align:center;color:#64748b;padding:20px}
-</style></head><body class="nb">
-<div id="bar">
-    <button class="b sm" onclick="openPanel()" aria-label="Yönetim paneli">☰ <span id="bd" style="color:#fbbf24;display:none">●</span></button>
-    <b style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">İSG Saha Yönetim Asistanı</b>
-    <div id="denemeContainer" style="display:flex; align-items:center; gap:6px; margin-left:auto;">
-        <span id="denemeBadge" style="font-size:0.7rem; background:#334155; padding:3px 6px; border-radius:4px; white-space:nowrap;"></span>
-        <button class="b sm g" style="padding:3px 6px; font-size:0.7rem; margin:0;" onclick="$('odemeModal').style.display='flex'">Hemen Satın Al</button>
-    </div>
-    <button class="b sm dg" style="flex:none" onclick="acil()" aria-label="Acil bildirim">🚨 Acil</button>
-</div>
-<input type="file" id="acf" accept="image/*" capture="environment" hidden onchange="acilSend(this)">
-<input type="file" id="clf" accept="image/*" hidden onchange="setLogo(this)">
-<div class="c" id="app"></div>
-
-<div id="pm" class="md"><div class="mc"><h2 id="pmt">📄 Sicil dosyası önizleme</h2><div id="pv" style="max-height:60vh;overflow:auto;border:1px solid var(--bd);margin-bottom:12px"></div><button class="b g" onclick="pdfDl()">PDF indir</button><button class="b" onclick="$('pm').style.display='none'">Kapat</button></div></div>
-<div id="mp" class="md" style="padding:0" onclick="if(event.target==this)closePanel()"><div class="mc" style="margin:0;max-width:340px;min-height:100%;border-radius:0 12px 12px 0;background:#f8fafc;padding:15px"><div style="display:flex;justify-content:space-between;align-items:center"><h2 style="border:0;margin:0">⚙️ Yönetim paneli</h2><button class="b sm" onclick="closePanel()" aria-label="Kapat">✕</button></div><div id="mpc" style="margin-top:12px"></div></div></div>
-<div id="al" style="display:none;position:fixed;top:56px;left:10px;right:10px;z-index:10;background:#fef3c7;border:2px solid #f59e0b;border-radius:10px;padding:12px;box-shadow:0 4px 12px #0004"><div id="alt"></div><button class="b sm" style="margin-top:8px" onclick="$('al').style.display='none';$('alt').innerHTML=''">Tamam</button></div>
-<div id="fm" class="md"><div class="mc"><h2 id="ft"></h2><div id="fb"></div></div></div>
-<div id="ltm" class="md"><div class="mc"><h2 id="ltt"></h2><div id="ltb" style="max-height:65vh;overflow:auto;white-space:pre-wrap;font-size:.85rem;color:#334155;padding:10px;background:#f8fafc;border-radius:8px;margin-bottom:12px"></div><button class="b" onclick="$('ltm').style.display='none'">Kapat</button></div></div>
-<div id="lb" class="md" onclick="this.style.display='none'"><img id="lbi" alt=""></div>
-
-<!-- PayTR / Lisans Kilit Modalı -->
-<div id="odemeModal" style="display:none;" class="md" style="z-index:99999; background:rgba(0,0,0,0.85);">
-    <div class="mc" style="max-width:550px; text-align:center;">
-        <div style="background:#fee2e2; color:#991b1b; width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">🔒</div>
-        <h2>Deneme Süreniz Sona Erdi</h2>
-        <p style="font-size:0.9rem; color:#64748b; margin-bottom:15px;">Uygulamayı tüm şantiyelerinizde sınırsız kullanmaya devam etmek için tek seferlik ödeme yapabilirsiniz.</p>
-        <div id="paytrContainer" style="background:#f8fafc; border:1px solid var(--bd); border-radius:8px; min-height:350px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:15px; margin-bottom:15px;">
-            <p style="font-size:0.85rem; color:#64748b; margin-bottom:10px;">Güvenli ödeme formu hazırlanıyor...</p>
-            <button class="b g sm" onclick="testLisansVer()">Test / Ödeme Simülasyonu (Aktifleştir)</button>
-        </div>
-        <small style="color:#94a3b8; display:block;">256-bit SSL Güvencesiyle Tek Seferlik Ödeme (Aylık Abonelik Yoktur)</small>
-    </div>
-</div>
-
-<!-- QR Kod Senkronizasyon Modalı -->
-<div id="qrModal" class="md"><div class="mc" style="text-align:center;">
-    <h2>📱 QR Kod ile Cihaza Aktar</h2>
-    <p style="font-size:0.85rem; color:#64748b; margin-bottom:12px;">Bu verileri telefona aktarmak için aşağıdaki QR kodu telefonunuzla okutun.</p>
-    <div id="qrcode" style="display:flex; justify-content:center; margin:15px 0;"></div>
-    <button class="b" onclick="$('qrModal').style.display='none'">Kapat</button>
-</div></div>
-
-<!-- QR Kod Tarayıcı Modalı -->
-<div id="scanModal" class="md"><div class="mc" style="text-align:center;">
-    <h2>📷 QR Kod ile Veri Al</h2>
-    <div id="reader" style="width:100%; max-width:400px; margin:0 auto;"></div>
-    <button class="b dg" style="margin-top:15px;" onclick="$('scanModal').style.display='none'">İptal / Kapat</button>
-</div></div>
-
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>İSG Katip Portalı</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./supabase-config.js"></script>
-<script>
-const sb = window.isgSupabase;
-if (!sb) { alert("Supabase yapılandırması eksik. supabase-config.js dosyasını kontrol edin."); }
-const $=i=>document.getElementById(i),
-esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),
-uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7),
-sid=v=>String(v||'').replace(/[^\w-]/g,''),
-today=()=>new Date().toISOString().slice(0,10),
-days=d=>d?Math.ceil((new Date(d)-new Date(today()))/864e5):null,
-soon=n=>n!==null&&n<=30,
-badge=n=>n<0?`<span class="bg r">${-n} gün geçti</span>`:`<span class="bg y">${n} gün kaldı</span>`,
-TY=['Ramak Kala Olay','İş Kazası','DÖF / Uygunsuzluk'],PT=['Uygunsuzluk','Kurallara uyum'];
-let db={companies:[], profile:{}, emsal:[], events:[]},cid=null,pid=null,tab='p',eid=null,currentUserId=null,isPasswordRecovery=false;const cache=new Map();
-let tempSignupData = null; // Kayıt OTP geçici verisi
-let tempResetData = null;  // Şifre yenileme OTP geçici verisi
-
-/* 5 Günlük Deneme, Sayaç ve Lisans Yönetimi */
-function lisansVeDenemeKontrolu() {
-    const STORAGE_KEY = 'isg_uygulama_lisans';
-    let kayit = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    let simdi = new Date().getTime();
-
-    if (!kayit) {
-        let bitisTarihi = simdi + (5 * 24 * 60 * 60 * 1000); // 5 gün başlangıç
-        kayit = { aktifLisans: false, denemeBitis: bitisTarihi };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(kayit));
-    }
-
-    const badgeEl = $('denemeBadge');
-    if (kayit.aktifLisans) {
-        if(badgeEl) badgeEl.innerText = "Sınırsız Lisans ✅";
-        return true;
-    }
-
-    let kalanSureMs = kayit.denemeBitis - simdi;
-    if (kalanSureMs <= 0) {
-        if(badgeEl) badgeEl.innerText = "Süre Doldu ❌";
-        $('odemeModal').style.display = 'flex';
-        return false;
-    } else {
-        let toplamSaat = Math.floor(kalanSureMs / (1000 * 60 * 60));
-        let kalanGun = Math.floor(toplamSaat / 24);
-        let kalanSaat = toplamSaat % 24;
-        
-        if(badgeEl) {
-            if(kalanGun > 0) {
-                badgeEl.innerText = `Deneme: ${kalanGun} gün ${kalanSaat} sa`;
-            } else {
-                badgeEl.innerText = `Deneme: ${kalanSaat} saat kaldı`;
-            }
-        }
-        return true;
-    }
+<style>
+:root {
+  --bg:#0f172a; --panel:#1e293b; --card:#334155; --text:#f8fafc; --muted:#94a3b8;
+  --accent:#38bdf8; --border:#475569; --danger:#ef4444; --success:#22c55e;
 }
+* { box-sizing:border-box; margin:0; padding:0; font-family:system-ui,-apple-system,sans-serif; }
+body { background:var(--bg); color:var(--text); line-height:1.5; padding-bottom:60px; }
+header { background:var(--panel); border-bottom:1px solid var(--border); padding:1rem; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:100; }
+.logo { font-weight:bold; font-size:1.2rem; color:var(--accent); display:flex; align-items:center; gap:0.5rem; }
+.btn { background:var(--accent); color:#000; border:none; padding:0.5rem 1rem; border-radius:0.375rem; font-weight:600; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:0.5rem; font-size:0.9rem; }
+.btn-danger { background:var(--danger); color:#fff; }
+.btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+.btn-sm { padding:0.25rem 0.5rem; font-size:0.8rem; }
+.container { max-width:800px; margin:0 auto; padding:1rem; }
+.card { background:var(--panel); border:1px solid var(--border); border-radius:0.5rem; padding:1rem; margin-bottom:1rem; }
+.form-group { margin-bottom:1rem; }
+.form-group label { display:block; margin-bottom:0.25rem; font-size:0.85rem; color:var(--muted); }
+.form-control { width:100%; padding:0.6rem; background:var(--card); border:1px solid var(--border); border-radius:0.375rem; color:var(--text); font-size:0.95rem; }
+.form-control:focus { outline:none; border-color:var(--accent); }
+.checkbox-group { display:flex; items-center:center; gap:0.5rem; margin-bottom:0.5rem; }
+.checkbox-group input { width:auto; }
+.auth-container { max-width:400px; margin:2rem auto; }
+.hidden { display:none !important; }
+.panel-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:200; display:flex; justify-content:center; align-items:center; padding:1rem; }
+.panel-content { background:var(--panel); border:1px solid var(--border); border-radius:0.5rem; width:100%; max-width:500px; max-height:90vh; overflow-y:auto; padding:1.5rem; }
+</style>
+</head>
+<body>
 
-function testLisansVer() {
-    let kayit = JSON.parse(localStorage.getItem('isg_uygulama_lisans')) || {};
-    kayit.aktifLisans = true;
-    localStorage.setItem('isg_uygulama_lisans', JSON.stringify(kayit));
-    $('odemeModal').style.display = 'none';
-    alert("Ödemeniz başarıyla alındı! Uygulamanız sınırsız olarak aktif edilmiştir.");
-    location.reload();
-}
+<header>
+  <div class="logo">⚡ İSG Portalı</div>
+  <div id="nav-actions"></div>
+</header>
 
-/* AES-GCM Şifreli Yedekleme */
-async function deriveKey(password, salt) {
-    const enc = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), {name: "PBKDF2"}, false, ["deriveKey"]);
-    return crypto.subtle.deriveKey({name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256"}, keyMaterial, {name: "AES-GCM", length: 256}, false, ["encrypt", "decrypt"]);
-}
+<div class="container">
+  <div id="auth-panel" class="auth-container card">
+    <h2 id="auth-title" style="margin-bottom:1rem; text-align:center;">Giriş Yap</h2>
+    <div id="auth-form">
+      <div class="form-group">
+        <label>E-Posta</label>
+        <input type="email" id="ai" class="form-control" placeholder="ornek@email.com">
+      </div>
+      <div class="form-group" id="phone-group">
+        <label>Telefon (+90 5XX XXX XX XX)</label>
+        <input type="tel" id="aphone" class="form-control" placeholder="+90 5XX XXX XX XX">
+      </div>
+      <div class="form-group">
+        <label>Şifre</label>
+        <input type="password" id="ap" class="form-control" placeholder="******">
+      </div>
+      
+      <div id="consent-group">
+        <div class="checkbox-group">
+          <input type="checkbox" id="c1">
+          <label for="c1">KVKK Metnini okudum, kabul ediyorum.</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="c2">
+          <label for="c2">Gizlilik Politikasını okudum, kabul ediyorum.</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="c3">
+          <label for="c3">Çerez Politikasını okudum, kabul ediyorum.</label>
+        </div>
+      </div>
 
-async function encryptData(dataStr, password) {
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const key = await deriveKey(password, salt);
-    const encoded = new TextEncoder().encode(dataStr);
-    const ciphertext = await crypto.subtle.encrypt({name: "AES-GCM", iv: iv}, key, encoded);
-    const combined = new Uint8Array(salt.length + iv.length + ciphertext.byteLength);
-    combined.set(salt, 0);
-    combined.set(iv, salt.length);
-    combined.set(new Uint8Array(ciphertext), salt.length + iv.length);
-    return b64(combined);
-}
+      <button id="auth-submit" class="btn" style="width:100%; margin-top:1rem;" onclick="initLogin()">Giriş Yap</button>
+      
+      <div style="margin-top:1rem; text-align:center; font-size:0.85rem;">
+        <span id="auth-switch-text">Hesabınız yok mu?</span>
+        <a href="javascript:void(0)" id="auth-switch-btn" onclick="toggleAuthMode()" style="color:var(--accent);">Kayıt Ol</a>
+      </div>
+    </div>
+  </div>
 
-async function decryptData(b64Data, password) {
-    const combined = ub(b64Data);
-    const salt = combined.slice(0, 16);
-    const iv = combined.slice(16, 28);
-    const ciphertext = combined.slice(28);
-    const key = await deriveKey(password, salt);
-    const decrypted = await crypto.subtle.decrypt({name: "AES-GCM", iv: iv}, key, ciphertext);
-    return new TextDecoder().decode(decrypted);
-}
-
-/* IndexedDB */
-const idb=new Promise((res,rej)=>{const r=indexedDB.open('isg',1);r.onupgradeneeded=()=>{r.result.createObjectStore('kv');r.result.createObjectStore('img')};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}),
-tx=(s,m,f)=>idb.then(d=>new Promise((res,rej)=>{const t=d.transaction(s,m),q=f(t.objectStore(s));t.oncomplete=()=>res(q&&q.result);t.onerror=t.onabort=()=>rej(t.error)})),
-get=(s,k)=>tx(s,'readonly',o=>o.get(k)),put=(s,k,v)=>tx(s,'readwrite',o=>o.put(v,k)),rm=(s,k)=>tx(s,'readwrite',o=>o.delete(k)),
-save=()=> { if (!lisansVeDenemeKontrolu()) return; if(!currentUserId) return; put('kv','db:'+currentUserId,db).catch(e=>alert('Kayıt hatası: '+(e&&e.message||e))) },
-imgSrc=async k=>{if(!cache.has(k))cache.set(k,await get('img',k));return cache.get(k)};
-function norm(){normProf();db.companies.forEach(c=>{c.id=sid(c.id)||uid();c.parent=c.parent?sid(c.parent):null;c.logo=c.logo?sid(c.logo):'';c.permits??=[];c.permits.forEach(a=>a.id=sid(a.id)||uid());c.photos??=[];c.accidents??=[];c.personnel??=[];c.docs??=[];c.docs.forEach(a=>{a.id=sid(a.id)||uid();a.key=sid(a.key)});[...c.accidents,...c.photos].forEach(a=>{a.id=sid(a.id)||uid();if(a.img)a.img=sid(a.img)});c.personnel.forEach(p=>{p.id=sid(p.id)||uid();if(p.img)p.img=sid(p.img);p.trainings??=[];p.health??=[];p.ppe??=[];p.perf??=[];p.perf.forEach(a=>{a.id=sid(a.id)||uid();if(a.img)a.img=sid(a.img)});p.health.forEach(r=>r.name??=r.type);p.ppe.forEach(r=>r.name??=r.item)})})}
-const C=()=>db.companies.find(c=>c.id==cid);
-const shrink=(f,m=1280)=>new Promise((res,rej)=>{const u=URL.createObjectURL(f),i=new Image();i.onload=()=>{const k=Math.min(1,m/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',.72))};i.onerror=()=>rej(new Error('Görsel okunamadı'));i.src=u}),
-storeImg=async(f,m)=>{const k=uid();await put('img',k,await shrink(f,m));return k};
-function hydrate(){document.querySelectorAll('img[data-i]').forEach(async m=>{m.src=(await imgSrc(m.dataset.i))||''})}
-async function zoom(k){$('lbi').src=await imgSrc(k);$('lb').style.display='block'}
-
-const fh=(id,t,open,extra='',pre='',st='')=>`<div class="card" id="${id}c"${st?` style="${st}"`:''}><h2 style="display:flex;justify-content:space-between;align-items:center;gap:8px;border:0;margin:0;padding:0"><span>${t}</span>${extra}<button type="button" class="b sm g" id="${id}p" onclick="tg('${id}')" aria-label="Aç veya kapat" style="font-size:1.2rem;padding:4px 14px;margin-left:auto">${open?'−':'+'}</button></h2>${pre}<div id="${id}x" style="display:${open?'block':'none'};margin-top:12px">`,FE='</div>';
-function tg(id){const x=$(id+'x'),o=x.style.display=='none';x.style.display=o?'block':'none';$(id+'p').textContent=o?'−':'+'}
-const FT=['Ana firma','Asıl işveren','Alt yüklenici (taşeron)','Ortak girişim','Diğer'];
-const subsOf=id=>db.companies.filter(x=>x.parent==id),isTop=c=>!c.parent||!db.companies.some(x=>x.id==c.parent);
-
-function home(){if(!lisansVeDenemeKontrolu())return;cid=pid=null;closePanel();setBar(1);chkAlarms();const lb=+localStorage.getItem('isg_bak')||0,age=(Date.now()-lb)/864e5;
-$('app').innerHTML=`<header><h1>🏢 Firmalarım</h1></header>
-<div class="card"><h2 style="display:flex;justify-content:space-between;align-items:center;border:0;margin:0;padding:0">Firma / şantiye ekle<button class="b sm g" id="cp" onclick="togC()" aria-label="Firma ekle" style="font-size:1.2rem;padding:4px 14px">+</button></h2><div id="cx" style="display:none;margin-top:12px"><input id="cn" placeholder="Firma veya şantiye adı"><input id="cd" placeholder="Lokasyon / açıklama"><label>Firma logosu</label><input type="file" id="clg" accept="image/*"><label>Firma türü</label><select id="cf" onchange="tgPar()">${FT.map(t=>`<option>${t}</option>`).join('')}</select><div id="cpw" style="display:none"><label>Ana firma</label><select id="cpar"><option value="">— Ana firma seçin —</option>${db.companies.filter(x=>isTop(x)&&x.type!=FT[2]).map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select></div><button class="b g" onclick="addC()">Oluştur</button></div></div>
-<div class="card"><h2>Kayıtlı firmalar</h2><div class="grid">${db.companies.filter(isTop).map(c=>`<div class="cc" onclick="pick('${c.id}')">${c.logo?`<img class="wm" alt="" data-i="${c.logo}">`:''}<h3>${esc(c.name)}</h3><p>${esc(c.desc)||'Açıklama yok'}</p><span class="bg gr">${c.personnel.length} personel</span> <span class="bg r">${c.accidents.length} kayıt</span></div>`).join('')||'<p class="mt" style="grid-column:1/-1">Henüz firma yok.</p>'}</div></div>`}
-function togC(){const x=$('cx'),o=x.style.display=='none';x.style.display=o?'block':'none';$('cp').textContent=o?'−':'+';if(o)$('cn').focus()}
-function tgPar(){$('cpw').style.display=$('cf').value==FT[2]?'block':'none'}
-async function addC(){if(!lisansVeDenemeKontrolu())return;const n=$('cn').value.trim();if(!n)return alert('Firma adı girin');const t=$('cf').value;let par=null;
-if(t==FT[2]){par=$('cpar').value;if(!par)return alert('Alt yüklenici için ana firma seçin.')}
-let lg='';const lf=$('clg').files[0];if(lf)try{lg=await storeImg(lf,500)}catch(e){return alert(e.message)}
-db.companies.push({id:uid(),name:n,desc:$('cd').value.trim(),type:t,parent:par,logo:lg,personnel:[],accidents:[],photos:[],docs:[]});save();
-if(par){cid=par;pid=null;tab='y';dash()}else home()}
-function pick(id){if(!lisansVeDenemeKontrolu())return;PFl={};PS=null;cid=id;pid=null;tab='p';dash()}
-function editC(){if(!lisansVeDenemeKontrolu())return;const c=C(),n=prompt('Firma adı',c.name);if(n===null)return;const d=prompt('Açıklama',c.desc||'');if(d===null)return;c.name=n.trim()||c.name;c.desc=d.trim();save();dash()}
-function delC(){if(!lisansVeDenemeKontrolu())return;const c=C(),S=subsOf(c.id),all=[c,...S];if(!confirm('"'+c.name+'" ve tüm kayıtları silinsin mi?'))return;all.forEach(k=>[{img:k.logo},...k.accidents,...k.photos,...k.personnel].forEach(x=>x.img&&rm('img',x.img)));db.companies=db.companies.filter(x=>!all.includes(x));save();home()}
-function dash(){if(!lisansVeDenemeKontrolu())return;const c=C();if(!c)return home();
-$('app').innerHTML=`<header><div><h1>🏢 ${esc(c.name)}</h1><small>${c.type?esc(c.type)+' · ':''}${esc(c.desc)}</small></div><div>${c.parent?`<button class="b sm" onclick="cid='${c.parent}';pid=null;tab='y';dash()">↑ Ana firma</button> `:''}<button class="b sm" onclick="$('clf').click()">🖼</button> <button class="b sm" onclick="editC()">✎</button> <button class="b sm dg" onclick="delC()">🗑</button> <button class="b sm" onclick="home()">Firmalar</button></div></header>
-<div class="tabs">${[['p','Personel'],['a','Denetim'],['g','📷 Görseller'],['d','📁 Dökümanlar'],['i','📋 İş izni'],...(isTop(c)?[['y','🏗️ Alt yükleniciler']]:[]),['s','Özet']].map(([k,n])=>`<button class="tb ${tab==k?'on':''}" onclick="tab='${k}';pid=null;dash()">${n}</button>`).join('')}</div><div id="tc"></div>`;rc()}
-function rc(){if(!lisansVeDenemeKontrolu())return;const c=C();$('tc').innerHTML=tab=='p'?(pid?detail(c):plist(c)):tab=='a'?acc(c):tab=='g'?gal(c):tab=='d'?dcs(c):tab=='y'?subsTab(c):tab=='i'?wpTab(c):sum(c);hydrate()}
-
-/* Personel */
-const warns=p=>[...p.trainings,...p.health].filter(r=>soon(days(r.exp)));
-function plist(c){const L=plRows(c);
-return `${fh('pc','Yeni personel',false)}<input id="pn" placeholder="Ad soyad"><input id="pt" placeholder="TC kimlik no" maxlength="11"><input id="pj" placeholder="Görevi"><label>İşe giriş</label><input type="date" id="pd"><button class="b g" onclick="addP()">Kaydet</button></div></div>
-<div class="card"><h2>Personel (${L.length})</h2><div class="tr"><table><tr><th>Ad</th><th>Görev</th><th>Giriş</th><th></th></tr>${L.map(p=>`<tr><td style="color:var(--s);font-weight:700;cursor:pointer" onclick="pid='${p.id}';rc()">${esc(p.name)}</td><td>${esc(p.job)}</td><td>${esc(p.date)||'-'}</td><td><button class="b sm dg" onclick="one('personnel','${p.id}')">Sil</button></td></tr>`).join('')}</table></div></div>`}
-async function addP(){if(!lisansVeDenemeKontrolu())return;const c=C(),name=$('pn').value.trim();if(!name)return alert('Ad soyad girin');
-c.personnel.push({id:uid(),name,tc:$('pt').value.trim(),job:$('pj').value.trim(),date:$('pd').value,trainings:[],health:[],ppe:[],perf:[]});save();rc()}
-function detail(c){const p=c.personnel.find(x=>x.id==pid);if(!p){pid=null;return plist(c)}p.perf??=[];
-return `<button class="b sm" onclick="pid=null;rc()">← Listeye dön</button><div class="card"><h2>👤 ${esc(p.name)}</h2><p>Görev: ${esc(p.job)||'-'}</p></div>`}
-
-function acc(c){return `${fh('ac','Denetim ekle',false)}<select id="at">${TY.map(t=>`<option>${t}</option>`).join('')}</select><textarea id="ad" rows="2" placeholder="Özet..."></textarea><input type="date" id="ax" value="${today()}"><button class="b g" onclick="addA()">Ekle</button></div></div><div class="card"><h2>Kayıtlar</h2>${c.accidents.map(a=>`<div style="border-bottom:1px solid #cbd5e1;padding:6px 0"><b>${esc(a.type)}</b>:${esc(a.desc)}</div>`).join('')||'<p class="mt">Kayıt yok.</p>'}</div>`}
-async function addA(){if(!lisansVeDenemeKontrolu())return;const d=$('ad').value.trim();if(!d)return alert('Açıklama girin');C().accidents.push({id:uid(),type:$('at').value,desc:d,date:$('ax').value||today()});save();rc()}
-
-function gal(c){return `${fh('gl','Görsel ekle',false)}<input id="gd" placeholder="Açıklama"><input type="file" id="gf" accept="image/*" onchange="addG(this)"><button class="b" onclick="$('gf').click()">Yükle</button></div></div><div class="grid">${c.photos.map(x=>`<div class="gi"><img alt="" data-i="${x.img}" onclick="zoom('${x.img}')"><p>${esc(x.desc)}</p></div>`).join('')}</div>`}
-async function addG(inp){if(!lisansVeDenemeKontrolu())return;const f=inp.files[0];if(!f)return;try{const k=await storeImg(f);C().photos.push({id:uid(),desc:$('gd').value.trim()||'Görsel',date:today(),img:k});save();rc()}catch(e){alert(e.message)}}
-
-function sum(c){return `<div class="card"><h2>Özet</h2><p>Toplam Personel: ${c.personnel.length}</p><p>Denetim/Olay: ${c.accidents.length}</p></div>`}
-function dcs(c){return `<div class="card"><h2>Dökümanlar</h2><p class="mt">Henüz döküman yok.</p></div>`}
-function subsTab(c){return `<div class="card"><h2>Alt Yükleniciler</h2><p class="mt">Alt yüklenici yok.</p></div>`}
-function wpTab(c){return `<div class="card"><h2>İş İzinleri</h2><p class="mt">İş izni yok.</p></div>`}
-function selAll(el,k){}function bulk(k){}function one(k,id){if(!lisansVeDenemeKontrolu())return;if(confirm('Silinsin mi?'))drop(k,[id])}
-function drop(k,ids){const c=C(),S=new Set(ids);c[k]=c[k].filter(x=>!S.has(x.id));save();rc()}
-
-/* İSG KANUNU MODÜLÜ */
-const LAW=[['6331 sayılı İş Sağlığı ve Güvenliği Kanunu','İSG\'nin temel kanunu: işveren ve çalışan yükümlülükleri, risk değerlendirmesi, eğitim.','https://mevzuat.gov.tr/mevzuat?MevzuatNo=6331&MevzuatTur=1&MevzuatTertip=5'],
-['4857 sayılı İş Kanunu','İş ilişkisi, çalışma ve dinlenme süreleri.'],
-['5510 sayılı Sosyal Sigortalar Kanunu','İş kazası bildirimi ve sigortalı hakları.']],
-REG=['İş Sağlığı ve Güvenliği Risk Değerlendirmesi Yönetmeliği','Yapı İşlerinde İş Sağlığı ve Güvenliği Yönetmeliği','Çalışanların İSG Eğitimlerinin Usul ve Esasları Hakkında Yönetmelik'];
-let lv='k';
-function law(v){if(v)lv=v;const tb=(k,n)=>`<button class="tb ${lv==k?'on':''}" onclick="law('${k}')">${n}</button>`;
-shell('📖 İSG Kanunu',`<div class="tabs">${tb('k','Kanunlar')}${tb('y','Yönetmelikler')}</div>`+(lv=='k'?`<div class="card"><h2>Temel Kanunlar</h2>${LAW.map(([t,d,u])=>`<div style="border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:8px"><b>${esc(t)}</b><p style="font-size:.85rem;color:#475569">${esc(d)}</p>${u?`<a href="${u}" target="_blank">Resmî metin ↗</a>`:''}</div>`).join('')}</div>`:`<div class="card"><h2>Yönetmelikler</h2>${REG.map(r=>`<div style="border:1px solid var(--bd);border-radius:8px;padding:8px;margin-bottom:6px">${esc(r)}</div>`).join('')}</div>`))}
-
-/* EMSAL KARARLAR MODÜLÜ */
-function emsal(){
-shell('⚖️ Emsal Kararlar',`<div class="card"><h2>Yargıtay Kararları</h2><p style="font-size:.85rem;color:#64748b;margin-bottom:10px">İş kazaları ve tazminat davalarına dair emsal niteliğindeki kararları buradan takip edebilirsiniz.</p><input placeholder="Karar ara..." oninput="el(this.value)"><div id="el" style="margin-top:10px">${db.emsal.map(x=>`<div style="border:1px solid var(--bd);padding:8px;border-radius:8px;margin-bottom:6px"><b>${esc(x.daire)}</b> · E. ${esc(x.esas)} K.${esc(x.karar)}<p style="font-size:.85rem">${esc(x.ozet)}</p></div>`).join('')||'<p class="mt">Henüz karar eklenmedi.</p>'}</div></div>`)}
-function el(q){}
-
-/* TAKVİM VE ALARM MODÜLÜ */
-const MN=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
-let cm=new Date(new Date().getFullYear(),new Date().getMonth(),1);
-function cal(){const y=cm.getFullYear(),m=cm.getMonth(),dim=new Date(y,m+1,0).getDate();
-let cells='';for(let d=1;d<=dim;d++){cells+=`<div style="text-align:center;padding:8px;border:1px solid #e2e8f0;border-radius:6px">${d}</div>`}
-shell('📅 Takvim & Hatırlatmalar',`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><h2 style="border:0;margin:0">${MN[m]} ${y}</h2></div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:10px">${['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map(x=>`<b style="text-align:center;font-size:0.8rem">${x}</b>`).join('')}${cells}</div></div>`)}
-function chkAlarms(){}
-
-/* PROFİLİM (CV) MODÜLÜ */
-const PK=['name','title','cert','phone','email','city','about','skills'];
-function normProf(){db.profile=db.profile||{};}
-function prof(){cid=pid=null;const P=db.profile||{};
-$('app').innerHTML=`<header><h1>👤 Profilim (CV)</h1><button class="b sm" onclick="home()">Ana sayfa</button></header>
-<div class="card"><h2>Kişisel Bilgiler</h2>${PK.map(k=>`<label>${k}</label><input id="pf_${k}" value="${esc(P[k])}">`).join('')}<button class="b g" onclick="saveProf()">Bilgileri Kaydet</button></div>`}
-function saveProf(){if(!lisansVeDenemeKontrolu())return;PK.forEach(k=>db.profile[k]=$('pf_'+k).value.trim());save();alert('Profil kaydedildi!');}
-
-/* ACİL BİLDİRİM */
-const acSet=()=>{try{return JSON.parse(localStorage.getItem('isg_acil'))||{}}catch(e){return {}}},
-tgSend=(tok,fd,m)=>fetch('https://api.telegram.org/bot'+tok+'/'+m,{method:'POST',body:fd}).then(r=>r.json());
-function acil(){const a=acSet();if(!a.tok||!a.chat){alert('Önce Yönetim paneli > Acil bildirim ayarlarını yapın.');return acilSet()}$('acf').click()}
-async function acilSend(inp){const f=inp.files[0];if(!f)return;const a=acSet();const fd=new FormData();fd.append('chat_id',a.chat);fd.append('photo',f);
-try{await tgSend(a.tok,fd,'sendPhoto');alert('✓ Acil bildirim Telegram\'a gönderildi.')}catch(e){alert('Gönderilemedi.')}}
-function acilSet(){const a=acSet();shell('🚨 Acil bildirim ayarı',`<div class="card"><label>Telegram Token</label><input id="at2" type="password" value="${esc(a.tok)}"><label>Sohbet ID</label><input id="ac2" value="${esc(a.chat)}"><button class="b g" onclick="acilSave()">Kaydet</button></div>`)}
-function acilSave(){localStorage.setItem('isg_acil',JSON.stringify({tok:$('at2').value.trim(),chat:$('ac2').value.trim()}));alert('Kaydedildi.');home()}
-async function setLogo(inp){if(!lisansVeDenemeKontrolu())return;const f=inp.files[0];if(!f)return;const c=C();try{c.logo=await storeImg(f,500);save();dash()}catch(e){alert(e.message)}}
-
-/* ŞİFRELİ YEDEKLEME & QR KOD */
-async function backupWithPassword() {
-    const pw = prompt('Yedek dosyanız için bir şifre belirleyin:');
-    if (!pw) return;
-    try {
-        const ks = await tx('img','readonly',o=>o.getAllKeys()), vs = await tx('img','readonly',o=>o.getAll()), im={};
-        ks.forEach((k,i)=>im[k]=vs[i]);
-        const encrypted = await encryptData(JSON.stringify({v:2,db,im}), pw);
-        dl(new Blob([encrypted],{type:'application/text'}), 'isg_sifreli_yedek_'+today()+'.isg');
-        alert('Şifreli yedek indirildi.');
-    } catch(e) { alert('Hata: '+e.message); }
-}
-
-async function restoreWithPassword() {
-    const f = $('rf').files[0];
-    if (!f) return alert('Önce .isg dosyasını seçin');
-    const pw = prompt('Yedek şifresini girin:');
-    if (!pw) return;
-    try {
-        const j = JSON.parse(await decryptData(await f.text(), pw));
-        if(!j.db) throw Error('Geçersiz dosya');
-        if(!confirm('Veriler silinip yüklenecek?'))return;
-        await tx('img','readwrite',o=>o.clear());
-        for(const k in j.im||{})await put('img',sid(k),j.im[k]);
-        db=j.db; norm(); cache.clear(); await save(); home();
-        alert('Yüklendi!');
-    } catch(e) { alert('Hata: Şifre yanlış!'); }
-}
-
-async function generateQRData() {
-    try {
-        const ks = await tx('img','readonly',o=>o.getAllKeys()), vs = await tx('img','readonly',o=>o.getAll()), im={};
-        ks.forEach((k,i)=>im[k]=vs[i]);
-        $('qrcode').innerHTML = '';
-        new QRCode($('qrcode'), { text: JSON.stringify({v:2,db,im}), width: 230, height: 230 });$('qrModal').style.display = 'flex';
-    } catch(e) { alert('QR kod oluşturulamadı.'); }
-}
-
-function startQRScanner() {
-    $('scanModal').style.display = 'flex';
-    const html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
-        async (decodedText) => {
-            html5QrCode.stop().then(async () => {
-                $('scanModal').style.display = 'none';
-                try {
-                    const j = JSON.parse(decodedText);
-                    await tx('img','readwrite',o=>o.clear());
-                    for(const k in j.im||{})await put('img',sid(k),j.im[k]);
-                    db=j.db; norm(); cache.clear(); await save(); home();
-                    alert('QR kod üzerinden veriler aktarıldı!');
-                } catch(err) { alert('Hata: '+err.message); }
-            });
-        }, () => {}
-    ).catch(err => { alert('Kamera başlatılamadı.'); });
-}
-
-/* Yönetim Paneli Menüsü */
-function panelHtml(){return `
-    <button class="b" style="text-align:left;padding:12px;margin-bottom:8px" onclick="closePanel();home()">🏠 Ana sayfa</button>
-    <button class="b" style="text-align:left;padding:12px;margin-bottom:8px" onclick="closePanel();prof()">👤 Profilim (CV)</button>
-    <button class="b" style="text-align:left;padding:12px;margin-bottom:8px" onclick="closePanel();law()">📖 İSG Kanunu</button>
-    <button class="b" style="text-align:left;padding:12px;margin-bottom:8px" onclick="closePanel();emsal()">⚖️ Emsal Kararlar</button>
-    <button class="b" style="text-align:left;padding:12px;margin-bottom:8px" onclick="closePanel();cal()">📅 Takvim</button>
-    <button class="b" style="text-align:left;padding:12px;margin-bottom:8px" onclick="closePanel();acilSet()">🚨 Acil bildirim ayarı</button>
-    <button class="b" style="text-align:left;padding:12px;margin-bottom:8px" onclick="closePanel();bak()">💾 Yedekleme & Aktarım</button>
-    <button class="b" style="text-align:left;padding:12px;margin-bottom:8px" onclick="closePanel();acct()">🔐 Hesap</button>
-    <button class="b dg" style="text-align:left;padding:12px;margin-bottom:8px" onclick="closePanel();logout()">🚪 Çıkış yap</button>
-`}
-
-function bak(){cid=pid=null;setBar(1);$('app').innerHTML=`<header><h1>💾 Yedekleme & Cihazlar Arası Aktarım</h1><button class="b sm" onclick="home()">Ana sayfa</button></header>
-<div class="card">
-    <h2>🔒 Şifreli Dosya Yedekleme</h2>
-    <button class="b v" onclick="backupWithPassword()">🔒 Şifreli Yedek İndir (.isg)</button>
-    <input type="file" id="rf" accept=".isg,.json" style="margin-top:10px;">
-    <button class="b" onclick="restoreWithPassword()">🔓 Şifreli Yedeği Yükle</button>
+  <div id="app-content" class="hidden">
+    <div class="card">
+      <h3>Hoş Geldiniz</h3>
+      <p style="color:var(--muted); margin-top:0.5rem;">Sisteme başarıyla giriş yaptınız. İSG süreçlerinizi yönetmeye başlayabilirsiniz.</p>
+    </div>
+  </div>
 </div>
-<div class="card">
-    <h2>📱 QR Kod ile Anlık Senkronizasyon</h2>
-    <button class="b g" onclick="generateQRData()">Aktarım QR Kodu Oluştur</button>
-    <button class="b" style="background:#0284c7;" onclick="startQRScanner()">Telefon ile QR Kod Okut</button>
-</div>`}
 
-function acct(){cid=pid=null;$('app').innerHTML=`<header><h1>🔐 Hesap</h1><button class="b sm" onclick="home()">Ana sayfa</button></header><div class="card"><button class="b dg" onclick="logout()">Çıkış yap</button></div>`}
-function setBar(v){$('bar').style.display=v?'flex':'none';document.body.classList.toggle('nb',!v)}
-function openPanel(){$('mpc').innerHTML=panelHtml();$('mp').style.display='block'}
-function closePanel(){$('mp').style.display='none'}
+<div id="modal-panel" class="panel-overlay hidden">
+  <div class="panel-content" id="modal-body"></div>
+</div>
 
-const CV=1,
-consentBlock=()=>`
-    <div style="margin:6px 0 12px; font-size:0.8rem; color:#475569;">
-        <label style="margin-bottom:4px;"><input type="checkbox" id="cs_kvkk"> KVKK Aydınlatma Metnini okudum ve kabul ediyorum.</label>
-        <label style="margin-bottom:4px;"><input type="checkbox" id="cs_gizlilik"> Gizlilik Politikasını kabul ediyorum.</label>
-        <label><input type="checkbox" id="cs_cerez"> Çerez Politikasını kabul ediyorum.</label>
-    </div>`,
-consentAll=()=>$('cs_kvkk')&&$('cs_kvkk').checked && $('cs_gizlilik')&&$('cs_gizlilik').checked && $('cs_cerez')&&$('cs_cerez').checked,
-saveConsent=()=>localStorage.setItem('isg_consent',JSON.stringify({v:CV,d:new Date().toISOString()})),
-consentOk=()=>{try{return JSON.parse(localStorage.getItem('isg_consent')).v==CV}catch(e){return false}};
+<script>
+// Supabase Yapılandırması
+const SUPABASE_URL = "https://YOUR_SUPABASE_URL.supabase.co"; 
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUserId = null;
+let isPasswordRecovery = false;
+let isSignupMode = false;
+let db = { companies: [], profile: {}, emsal: [], events: [] };
+
+function $(id) { return document.getElementById(id); }
+
+async function get(store, key) {
+  try {
+    const val = localStorage.getItem(key);
+    return val ? JSON.parse(val) : null;
+  } catch(e) { return null; }
+}
+
+async function put(store, key, val) {
+  try {
+    localStorage.setItem(key, JSON.stringify(val));
+  } catch(e) {}
+}
+
+function norm() {
+  if(!db.companies) db.companies = [];
+  if(!db.profile) db.profile = {};
+  if(!db.emsal) db.emsal = [];
+  if(!db.events) db.events = [];
+}
+
+function consentAll() {
+  return $('c1').checked && $('c2').checked && $('c3').checked;
+}
+
+function consentOk() {
+  return localStorage.getItem('consent_' + currentUserId) === 'true';
+}
+
+function saveConsent() {
+  if(currentUserId) {
+    localStorage.setItem('consent_' + currentUserId, 'true');
+  }
+}
+
+function normalizePhone(p) {
+  p = p.replace(/\D/g, '');
+  if(p.startsWith('0')) p = p.substring(1);
+  if(!p.startsWith('90')) p = '90' + p;
+  return '+' + p;
+}
+
+function closePanel() {
+  $('modal-panel').classList.add('hidden');
+}
+
+function toggleAuthMode() {
+  isSignupMode = !isSignupMode;
+  if(isSignupMode) {
+    $('auth-title').innerText = "Kayıt Ol";
+    $('phone-group').classList.remove('hidden');
+    $('consent-group').classList.remove('hidden');
+    $('auth-submit').innerText = "Kayıt Ol";
+    $('auth-submit').setAttribute('onclick', 'initSignup()');
+    $('auth-switch-text').innerText = "Zaten hesabınız var mı?";
+    $('auth-switch-btn').innerText = "Giriş Yap";
+  } else {
+    $('auth-title').innerText = "Giriş Yap";
+    $('phone-group').classList.add('hidden');
+    $('consent-group').classList.add('hidden');
+    $('auth-submit').innerText = "Giriş Yap";
+    $('auth-submit').setAttribute('onclick', 'initLogin()');
+    $('auth-switch-text').innerText = "Hesabınız yok mu?";
+    $('auth-switch-btn').innerText = "Kayıt Ol";
+  }
+}
+
+function authUI(isLoggedIn) {
+  if(isLoggedIn) {
+    $('auth-panel').classList.add('hidden');
+    $('app-content').classList.remove('hidden');
+    $('nav-actions').innerHTML = `<button class="btn btn-outline btn-sm" onclick="logout()">Çıkış Yap</button>`;
+  } else {
+    $('auth-panel').classList.remove('hidden');
+    $('app-content').classList.add('hidden');
+    $('nav-actions').innerHTML = '';
+    toggleAuthMode();
+    isSignupMode = true;
+    toggleAuthMode();
+  }
+}
+
+function home() {
+  authUI(1);
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  currentUserId = null;
+  authUI(0);
+}
 
 async function gate(){
     closePanel();
@@ -423,14 +223,7 @@ async function gate(){
         }
         db=userDb || {companies:[], profile:{}, emsal:[], events:[]};
         norm();
-        const {data: profile, error: profileError}=await sb.from('profiles').select('phone,phone_verified_at').eq('user_id',currentUserId).maybeSingle();
-        if(profileError) throw profileError;
-        if(!profile || !profile.phone_verified_at){
-            showPhoneVerifyUI(session.user, profile?.phone || session.user.user_metadata?.phone || '');
-            return;
-        }
         if(!consentOk()){
-            // Consent is collected at registration; a new browser does not invalidate the verified account.
             saveConsent();
         }
         home();
@@ -441,22 +234,14 @@ async function gate(){
     }
 }
 
-function authUI(reg){
-    setBar(0);
-    $('app').innerHTML=`<header><h1>🏗️ İSG Asistan</h1></header><div class="card"><h2>${reg?'Kayıt ol':'Giriş yap'}</h2>
-    <form onsubmit="event.preventDefault();${reg?'initSignup()':'login()'}">
-    ${reg?`<label>E-posta adresi</label><input id="ai" type="email" placeholder="mail@adres.com" autocomplete="email" required>
-    <label>Telefon numarası</label><input id="aphone" type="tel" placeholder="+90 5XX XXX XX XX" autocomplete="tel" required>`:
-    `<label>E-posta adresi</label><input id="ai" type="email" placeholder="mail@adres.com" autocomplete="email" required autofocus>`}
-    <label>Şifre</label><input id="ap" type="password" placeholder="En az 8 karakter" autocomplete="${reg?'new-password':'current-password'}" required>
-    ${reg?consentBlock():''}
-    <button type="submit" class="b g">${reg?'Kayıt Ol ve E-postayı Doğrula':'Giriş yap'}</button>
-    </form>
-    ${reg?`<div style="text-align:center;margin-top:12px;"><a href="#" onclick="authUI(0);return false;" style="color:var(--s);font-size:0.85rem;text-decoration:underline;">Zaten hesabınız var mı? Giriş yapın</a></div>`:
-    `<div style="text-align:center;margin-top:12px;display:flex;justify-content:space-between;font-size:0.85rem;gap:12px;">
-    <a href="#" onclick="authUI(1);return false;" style="color:var(--s);text-decoration:underline;">Kayıt olun</a>
-    <a href="#" onclick="showForgotUI();return false;" style="color:var(--d);text-decoration:underline;">Şifremi unuttum</a></div>`}
-    </div>`;
+async function initLogin() {
+  const email = $('ai').value.trim().toLowerCase();
+  const password = $('ap').value;
+  if(!email || !password) return alert('E-posta ve şifrenizi girin.');
+  
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if(error) return alert('Giriş başarısız: ' + error.message);
+  await gate();
 }
 
 async function initSignup(){
@@ -479,140 +264,14 @@ async function initSignup(){
     if(data.session){
         await gate();
     } else {
-        showEmailOtpUI(email);
+        alert('Kayıt başarılı! Lütfen e-posta adresinize gelen doğrulama bağlantısına tıklayın.');
     }
 }
 
-function showEmailOtpUI(email){
-    setBar(0);
-    $('app').innerHTML=`<header><h1>📧 E-posta doğrulama</h1></header><div class="card">
-    <h2>Doğrulama kodunu girin</h2>
-    <p style="font-size:.9rem;color:#64748b;margin-bottom:12px;"><b>${esc(email)}</b> adresine gönderilen 6 haneli kodu girin.</p>
-    <label>E-posta kodu</label><input id="email_verify_code" inputmode="numeric" maxlength="6" placeholder="6 haneli kod">
-    <button class="b g" onclick="verifyEmailCode('${esc(email)}')">E-postayı doğrula</button>
-    <button class="b" onclick="resendEmailCode('${esc(email)}')">Kodu tekrar gönder</button>
-    <button class="b sm" style="background:#64748b;margin-top:8px" onclick="authUI(0)">Giriş ekranına dön</button></div>`;
-}
-
-async function verifyEmailCode(email){
-    const token=$('email_verify_code').value.trim();
-    if(!/^\d{6}$/.test(token)) return alert('6 haneli e-posta kodunu girin.');
-    const {data,error}=await sb.auth.verifyOtp({email,token,type:'signup'});
-    if(error) return alert('E-posta doğrulanamadı: '+error.message);
-    if(data.session) await gate();
-    else { alert('E-posta doğrulandı. Şimdi giriş yapın.'); authUI(0); }
-}
-
-async function resendEmailCode(email){
-    const {error}=await sb.auth.resend({type:'signup',email});
-    if(error) return alert('Kod tekrar gönderilemedi: '+error.message);
-    alert('Yeni doğrulama kodu gönderildi.');
-}
-
-function normalizePhone(value){
-    let digits=String(value||'').replace(/\D/g,'');
-    if(digits.startsWith('0090')) digits=digits.slice(4);
-    else if(digits.startsWith('90')) digits=digits.slice(2);
-    else if(digits.startsWith('0')) digits=digits.slice(1);
-    return /^5\d{9}$/.test(digits)?'+90'+digits:null;
-}
-
-function showPhoneVerifyUI(user, existingPhone=''){
-    setBar(0);
-    const phone=existingPhone || user?.user_metadata?.phone || '';
-    $('app').innerHTML=`<header><h1>📱 Telefon doğrulama</h1></header><div class="card">
-    <h2>SMS doğrulaması gerekli</h2>
-    <p style="font-size:.9rem;color:#64748b;margin-bottom:12px;">E-posta doğrulaması tamamlandı. Uygulamayı kullanmak için telefon numaranı SMS koduyla doğrula.</p>
-    <label>Telefon numarası</label><input id="phone_verify_number" type="tel" value="${esc(phone)}" placeholder="+90 5XX XXX XX XX" autocomplete="tel">
-    <button class="b g" onclick="sendPhoneCode()">SMS doğrulama kodu gönder</button>
-    <div id="phoneCodeArea" style="display:none;margin-top:12px;"><label>SMS kodu</label>
-    <input id="phone_verify_code" inputmode="numeric" maxlength="6" placeholder="6 haneli kod">
-    <button class="b" onclick="verifyPhoneCode()">Telefonu doğrula</button></div>
-    <button class="b sm" style="background:#64748b;margin-top:8px" onclick="logout()">Çıkış yap</button></div>`;
-}
-
-async function sendPhoneCode(){
-    const phone=normalizePhone($('phone_verify_number').value);
-    if(!phone) return alert('Türkiye cep telefonu numarasını +90 5XX XXX XX XX biçiminde girin.');
-    const {data,error}=await sb.functions.invoke('phone-otp',{body:{action:'send',phone}});
-    if(error) return alert('SMS gönderilemedi: '+(error.message||'Sunucu hatası'));
-    if(data?.error) return alert(data.error);
-    $('phone_verify_number').value=phone;
-    $('phoneCodeArea').style.display='block';
-    alert('Doğrulama kodu SMS ile gönderildi. Kod 5 dakika geçerlidir.');
-}
-
-async function verifyPhoneCode(){
-    const code=$('phone_verify_code').value.trim();
-    if(!/^\d{6}$/.test(code)) return alert('6 haneli SMS kodunu girin.');
-    const {data,error}=await sb.functions.invoke('phone-otp',{body:{action:'verify',code}});
-    if(error) return alert('Kod doğrulanamadı: '+(error.message||'Sunucu hatası'));
-    if(data?.error) return alert(data.error);
-    alert('Telefon numarası doğrulandı.');
-    await gate();
-}
-
-function showForgotUI(){
-    setBar(0);
-    $('app').innerHTML=`<header><h1>🏗️ İSG Asistan - Şifre yenileme</h1></header><div class="card">
-    <h2>Şifre sıfırlama bağlantısı</h2><label>Kayıtlı e-posta adresi</label>
-    <input id="forgot_ident" type="email" placeholder="mail@adres.com" autocomplete="email">
-    <button class="b g" onclick="sendResetCode()">Sıfırlama bağlantısı gönder</button>
-    <button class="b sm" style="background:#64748b;margin-top:10px" onclick="authUI(0)">Giriş ekranına dön</button></div>`;
-}
-
-async function sendResetCode(){
-    const email=$('forgot_ident').value.trim().toLowerCase();
-    if(!email) return alert('E-posta adresi girin.');
-    const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
-    if(error) return alert('Bağlantı gönderilemedi: '+error.message);
-    alert('Şifre sıfırlama bağlantısı e-posta adresinize gönderildi.');
-    authUI(0);
-}
-
-function showNewPasswordUI(){
-    setBar(0);
-    $('app').innerHTML=`<header><h1>🏗️ İSG Asistan - Yeni şifre</h1></header><div class="card">
-    <h2>Yeni şifre belirle</h2><label>Yeni şifre</label><input id="new_pw" type="password" minlength="8" placeholder="En az 8 karakter">
-    <button class="b g" onclick="saveNewPassword()">Şifreyi güncelle</button></div>`;
-}
-
-async function saveNewPassword(){
-    const newPw=$('new_pw').value;
-    if(newPw.length<8) return alert('Şifre en az 8 karakter olmalı.');
-    const {error}=await sb.auth.updateUser({password:newPw});
-    if(error) return alert('Şifre güncellenemedi: '+error.message);
-    isPasswordRecovery=false;
-    alert('Şifreniz güncellendi. Giriş yapabilirsiniz.');
-    await sb.auth.signOut();
-    authUI(0);
-}
-
-async function login(){
-    const email=$('ai').value.trim().toLowerCase();
-    const password=$('ap').value;
-    const {data,error}=await sb.auth.signInWithPassword({email,password});
-    if(error) return alert('Giriş yapılamadı: '+error.message);
-    if(!data.session) return alert('Giriş oturumu oluşturulamadı.');
-    await gate();
-}
-
-async function logout(){
-    await sb.auth.signOut();
-    currentUserId=null;
-    db={companies:[], profile:{}, emsal:[], events:[]};
-    cid=pid=null;
-    authUI(0);
-}
-
-sb.auth.onAuthStateChange((event, session)=>{
-    if(event==='PASSWORD_RECOVERY') { isPasswordRecovery=true; showNewPasswordUI(); }
+// Uygulama Başlangıcı
+window.addEventListener('DOMContentLoaded', () => {
+  gate();
 });
-function dl(b,n){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5e3)}
-
-const b64=u=>btoa(String.fromCharCode(...u)),ub=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0)),
-hash=async(pw,salt)=>b64(new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:2e5},await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveBits']),256))),
-A=()=>{try{return JSON.parse(localStorage.getItem('isg_auth'))}catch(e){return null}};
-
-(async()=>{try{norm()}catch(e){}await gate();setInterval(lisansVeDenemeKontrolu, 60000);})();
-</script></body></html>
+</script>
+</body>
+</html>
